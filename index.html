@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mathix — Tables d'addition et de multiplication</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --yellow: #FFD93D; --orange: #FF6B35; --green: #4ECDC4;
+    --purple: #A78BFA; --red: #EF4444; --dark: #1E1B4B;
+    --bg: #FFF9F0; --card: #FFFFFF;
+    --shadow: 0 8px 32px rgba(30,27,75,0.12);
+  }
+  body { font-family: 'Nunito', sans-serif; background: var(--bg); min-height: 100vh; color: var(--dark); overflow-x: hidden; }
+  .screen { display: none; padding: 24px 20px; max-width: 640px; margin: 0 auto; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+  h2 { font-family: 'Baloo 2', cursive; font-size: 1.6rem; color: var(--dark); }
+  .card { background: var(--card); border-radius: 20px; padding: 24px; box-shadow: var(--shadow); }
+  .btn { font-family: 'Nunito', sans-serif; font-size: 1.1rem; font-weight: 800; padding: 16px 28px; border-radius: 50px; border: none; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; display: inline-flex; align-items: center; gap: 8px; justify-content: center; width: 100%; }
+  .btn-primary { background: var(--orange); color: white; box-shadow: 0 6px 0 #c94f20; }
+  .btn-primary:hover { box-shadow: 0 4px 0 #c94f20; transform: translateY(2px); }
+  .btn-primary:active { box-shadow: 0 2px 0 #c94f20; transform: translateY(4px); }
+  .btn-ghost { background: white; color: var(--dark); border: 3px solid #e5e5e5; box-shadow: 0 4px 0 #e5e5e5; width: auto; }
+  .btn-ghost:hover { box-shadow: 0 2px 0 #e5e5e5; transform: translateY(2px); }
+  .btn-green { background: var(--green); color: white; box-shadow: 0 6px 0 #35a89f; }
+  .choice-grid { display: grid; gap: 12px; }
+  .choice-btn { font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 700; padding: 18px 12px; border-radius: 16px; border: 3px solid #e5e5e5; background: white; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 6px; box-shadow: 0 4px 0 #e5e5e5; }
+  .choice-btn:hover { border-color: var(--orange); background: #fff5f0; }
+  .choice-btn.selected { border-color: var(--orange); background: #fff5f0; box-shadow: 0 4px 0 var(--orange); }
+  .emoji { font-size: 2rem; }
+  .progress-bar { height: 10px; background: #f0f0f0; border-radius: 99px; overflow: hidden; margin: 8px 0; }
+  .progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--orange), var(--yellow)); transition: width 0.3s; }
+  .nav-row { display: flex; gap: 12px; margin-top: auto; padding-top: 20px; }
+  .nav-row .btn { flex: 1; }
+  .step-indicator { display: flex; gap: 6px; margin-bottom: 20px; }
+  .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #e5e5e5; transition: background 0.2s; }
+  .step-dot.active { background: var(--orange); }
+  .step-dot.done { background: var(--green); }
+  input[type="number"] { font-family: 'Baloo 2', cursive; font-size: 2rem; font-weight: 700; text-align: center; width: 100%; padding: 16px; border-radius: 16px; border: 3px solid #e5e5e5; outline: none; color: var(--dark); background: white; transition: border-color 0.2s; -moz-appearance: textfield; }
+  input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  input[type="number"]:focus { border-color: var(--orange); }
+  input[type="email"] { font-family: 'Nunito', sans-serif; font-size: 1.1rem; font-weight: 600; width: 100%; padding: 16px 20px; border-radius: 50px; border: 3px solid #e5e5e5; outline: none; color: var(--dark); background: white; transition: border-color 0.2s; margin-bottom: 12px; }
+  input[type="email"]:focus { border-color: var(--orange); }
+  input[type="email"]::placeholder { color: #bbb; }
+  .operation-display { font-family: 'Baloo 2', cursive; font-size: 3.5rem; font-weight: 800; text-align: center; color: var(--dark); padding: 24px; background: white; border-radius: 20px; box-shadow: var(--shadow); }
+  .timer-ring { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+  .timer-ring svg { transform: rotate(-90deg); }
+  .timer-ring .timer-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: 'Baloo 2', cursive; font-size: 1.4rem; font-weight: 800; }
+  .result-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: white; border: 2px solid #f0f0f0; margin-bottom: 8px; font-weight: 700; font-size: 1rem; }
+  .dot { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: 800; }
+  .dot-green { background: var(--green); }
+  .dot-red { background: var(--red); }
+  .score-display { font-family: 'Baloo 2', cursive; font-size: 4rem; font-weight: 800; text-align: center; background: linear-gradient(135deg, var(--orange), var(--yellow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .game-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .tag { font-size: 0.85rem; font-weight: 700; padding: 4px 14px; border-radius: 99px; display: inline-block; }
+  .tag-orange { background: #fff0e8; color: var(--orange); border: 2px solid var(--orange); }
+  .tag-green { background: #effffd; color: #2a8a84; border: 2px solid var(--green); }
+  .tag-purple { background: #f5f3ff; color: #7c3aed; border: 2px solid var(--purple); }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: white; border-radius: 14px; border: 3px solid #e5e5e5; cursor: pointer; font-weight: 700; font-size: 1.05rem; }
+  .toggle { width: 52px; height: 28px; background: #e5e5e5; border-radius: 99px; position: relative; transition: background 0.2s; }
+  .toggle::after { content: ''; position: absolute; width: 22px; height: 22px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left 0.2s; }
+  .toggle.on { background: var(--green); }
+  .toggle.on::after { left: 27px; }
+  .history-item { background: white; border-radius: 16px; padding: 16px; margin-bottom: 10px; border: 2px solid #f0f0f0; cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
+  .history-item:hover { border-color: var(--orange); transform: translateY(-2px); }
+  .hero-bg { background: linear-gradient(135deg, #fff9f0 0%, #fff0e0 100%); border-radius: 24px; padding: 28px; text-align: center; margin-bottom: 24px; border: 3px dashed #ffd093; }
+  .hero-title { font-family: 'Baloo 2', cursive; font-size: 2.8rem; font-weight: 800; color: var(--dark); line-height: 1.1; margin-bottom: 6px; }
+  .hero-sub { font-size: 1rem; color: #888; font-weight: 600; }
+  .section-label { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #aaa; margin-bottom: 10px; }
+  .scroll-area { flex: 1; overflow-y: auto; }
+  .bounce { animation: bounce 0.5s ease; }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  .shake { animation: shake 0.4s ease; }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+  .table-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .table-btn { font-family: 'Baloo 2', cursive; font-size: 1.1rem; font-weight: 800; padding: 14px 8px; border-radius: 12px; border: 3px solid #e5e5e5; background: white; cursor: pointer; transition: all 0.15s; text-align: center; box-shadow: 0 3px 0 #e5e5e5; }
+  .table-btn:hover { border-color: var(--orange); background: #fff5f0; }
+  .table-btn.selected { border-color: var(--orange); background: #fff5f0; box-shadow: 0 3px 0 var(--orange); color: var(--orange); }
+  .q-counter { font-size: 0.9rem; font-weight: 700; color: #aaa; text-align: right; }
+  .streak-bar { display: flex; gap: 4px; justify-content: center; margin: 8px 0; }
+  .streak-dot { width: 12px; height: 12px; border-radius: 50%; background: #e5e5e5; }
+  .streak-dot.ok { background: var(--green); }
+  .streak-dot.ko { background: var(--red); }
+  .loading { text-align: center; padding: 40px; color: #aaa; font-weight: 700; font-size: 1rem; }
+  .error-msg { background: #fee2e2; color: #991b1b; padding: 12px 16px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; margin-bottom: 12px; }
+  .success-msg { background: #dcfce7; color: #166534; padding: 16px; border-radius: 16px; font-weight: 700; font-size: 0.95rem; text-align: center; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<!-- SCREEN: Login -->
+<div class="screen active" id="screen-login">
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:24px;">
+    <div class="hero-bg">
+      <div style="font-size:4rem; margin-bottom:8px;">🧮</div>
+      <div class="hero-title">Mathix !</div>
+      <div class="hero-sub">Entraîne-toi aux tables d'addition et de multiplication</div>
+    </div>
+    <div class="card">
+      <div class="section-label">Connexion</div>
+      <p style="font-size:1rem; color:#666; margin-bottom:20px; font-weight:600;">Entre ton email, on t'envoie un lien magique ✨</p>
+      <div id="login-error"></div>
+      <div id="login-form">
+        <input type="email" id="email-input" placeholder="ton@email.com" onkeydown="if(event.key==='Enter') sendMagicLink()">
+        <button class="btn btn-primary" onclick="sendMagicLink()" id="magic-btn">
+          ✉️ Recevoir le lien de connexion
+        </button>
+      </div>
+      <div id="login-success" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: Menu -->
+<div class="screen" id="screen-menu">
+  <div class="hero-bg" style="margin-bottom:20px;">
+    <div style="font-size:2.5rem; margin-bottom:4px;">🧮</div>
+    <div class="hero-title" style="font-size:2rem;">Mathix !</div>
+    <div id="menu-username" class="hero-sub"></div>
+  </div>
+  <div style="display:flex; flex-direction:column; gap:14px; flex:1;">
+    <button class="btn btn-primary" style="font-size:1.3rem; padding:20px;" onclick="showScreen('screen-config-1')">▶ Nouveau jeu</button>
+    <button class="btn btn-ghost" style="font-size:1.1rem; width:100%;" onclick="showHistoryScreen()">📋 Mes parties</button>
+  </div>
+  <div style="text-align:center; padding-top:20px;">
+    <button onclick="logout()" style="background:none; border:none; cursor:pointer; font-family:'Nunito'; font-size:0.9rem; color:#bbb; font-weight:600;">Se déconnecter</button>
+  </div>
+</div>
+
+<!-- SCREEN: Config 1 -->
+<div class="screen" id="screen-config-1">
+  <div class="step-indicator" id="steps-1"></div>
+  <h2 style="margin-bottom:6px;">Quel type de calcul ?</h2>
+  <p style="color:#999; font-weight:600; margin-bottom:24px; font-size:0.95rem;">Choisis ce que tu veux réviser</p>
+  <div class="choice-grid">
+    <button class="choice-btn" id="btn-adding" onclick="selectCalcType('adding')"><span class="emoji">➕</span><span>Addition</span></button>
+    <button class="choice-btn" id="btn-multiplying" onclick="selectCalcType('multiplying')"><span class="emoji">✖️</span><span>Multiplication</span></button>
+    <button class="choice-btn" id="btn-both" onclick="selectCalcType('both')" style="grid-column:1/-1;"><span class="emoji">🔀</span><span>Les deux !</span></button>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="showScreen('screen-menu')">← Retour</button>
+    <button class="btn btn-primary" id="next-1" onclick="goToConfig2()" disabled style="opacity:0.4;cursor:not-allowed;">Suivant →</button>
+  </div>
+</div>
+
+<!-- SCREEN: Config 2 -->
+<div class="screen" id="screen-config-2">
+  <div class="step-indicator" id="steps-2"></div>
+  <h2 style="margin-bottom:6px;">Quelles tables ?</h2>
+  <p style="color:#999; font-weight:600; margin-bottom:20px; font-size:0.95rem;">Toutes ou tu préfères choisir ?</p>
+  <div class="choice-grid" style="grid-template-columns:1fr 1fr; margin-bottom:20px;">
+    <button class="choice-btn" id="btn-all-tables" onclick="selectTableMode('all')"><span class="emoji">🌟</span><span>Toutes les tables</span></button>
+    <button class="choice-btn" id="btn-some-tables" onclick="selectTableMode('some')"><span class="emoji">🎯</span><span>Certaines tables</span></button>
+  </div>
+  <div id="table-picker" style="display:none;">
+    <div class="section-label" id="table-picker-label">Choisis les tables :</div>
+    <div class="table-grid" id="add-table-grid" style="display:none; margin-bottom:14px;"></div>
+    <div class="section-label" id="mult-label" style="display:none;">Tables de multiplication :</div>
+    <div class="table-grid" id="mult-table-grid" style="display:none;"></div>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="showScreen('screen-config-1')">← Retour</button>
+    <button class="btn btn-primary" id="next-2" onclick="showScreen('screen-config-3')" disabled style="opacity:0.4;cursor:not-allowed;">Suivant →</button>
+  </div>
+</div>
+
+<!-- SCREEN: Config 3 -->
+<div class="screen" id="screen-config-3">
+  <div class="step-indicator" id="steps-3"></div>
+  <h2 style="margin-bottom:6px;">Dans quel ordre ?</h2>
+  <p style="color:#999; font-weight:600; margin-bottom:24px; font-size:0.95rem;">Comment les questions vont apparaître</p>
+  <div class="choice-grid">
+    <button class="choice-btn" id="btn-sorted" onclick="selectOrder('sorted')"><span class="emoji">📋</span><span style="font-size:0.9rem;">Dans l'ordre</span><span style="font-size:0.75rem;color:#aaa;font-weight:600;">Table par table</span></button>
+    <button class="choice-btn" id="btn-shuffle" onclick="selectOrder('shuffle')"><span class="emoji">🎲</span><span style="font-size:0.9rem;">Au hasard</span><span style="font-size:0.75rem;color:#aaa;font-weight:600;">Questions mélangées</span></button>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="showScreen('screen-config-2')">← Retour</button>
+    <button class="btn btn-primary" id="next-3" onclick="showScreen('screen-config-4')" disabled style="opacity:0.4;cursor:not-allowed;">Suivant →</button>
+  </div>
+</div>
+
+<!-- SCREEN: Config 4 -->
+<div class="screen" id="screen-config-4">
+  <div class="step-indicator" id="steps-4"></div>
+  <h2 style="margin-bottom:6px;">Compte à rebours ?</h2>
+  <p style="color:#999; font-weight:600; margin-bottom:24px; font-size:0.95rem;">Tu peux t'imposer un temps limite !</p>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="toggle-row" onclick="toggleTimer()">
+      <span style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.4rem;">⏱️</span> Activer le timer</span>
+      <div class="toggle" id="timer-toggle"></div>
+    </div>
+  </div>
+  <div id="timer-value-area" style="display:none; margin-top:8px;">
+    <div class="section-label">Secondes par question</div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button onclick="changeTimer(-5)" class="btn btn-ghost" style="padding:12px 20px;font-size:1.2rem;flex-shrink:0;width:auto;">−5</button>
+      <input type="number" id="timer-seconds" value="10" min="3" max="120">
+      <button onclick="changeTimer(5)" class="btn btn-ghost" style="padding:12px 20px;font-size:1.2rem;flex-shrink:0;width:auto;">+5</button>
+    </div>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="showScreen('screen-config-3')">← Retour</button>
+    <button class="btn btn-primary" style="font-size:1.2rem;" onclick="startGame()">Jouer ! 🚀</button>
+  </div>
+</div>
+
+<!-- SCREEN: Jeu -->
+<div class="screen" id="screen-game">
+  <div class="game-header">
+    <div style="flex:1;">
+      <div class="progress-bar"><div class="progress-fill" id="game-progress"></div></div>
+      <div class="q-counter" id="q-counter"></div>
+    </div>
+    <div class="timer-ring" id="timer-ring" style="display:none;">
+      <svg width="80" height="80">
+        <circle cx="40" cy="40" r="34" fill="none" stroke="#f0f0f0" stroke-width="6"/>
+        <circle cx="40" cy="40" r="34" fill="none" stroke="var(--orange)" stroke-width="6" stroke-dasharray="213.6" id="timer-circle" stroke-linecap="round"/>
+      </svg>
+      <div class="timer-text" id="timer-display">10</div>
+    </div>
+  </div>
+  <div id="streak-bar" class="streak-bar"></div>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:20px;">
+    <div class="operation-display" id="operation-display">?</div>
+    <div id="feedback-area" style="text-align:center;min-height:32px;font-family:'Baloo 2';font-size:1.2rem;font-weight:800;color:transparent;">-</div>
+    <input type="number" id="answer-input" placeholder="Ta réponse..." onkeydown="handleKey(event)">
+    <button class="btn btn-green" style="font-size:1.2rem;padding:18px;" onclick="submitAnswer()">✓ Valider</button>
+  </div>
+  <div style="text-align:center;padding-top:12px;">
+    <button onclick="confirmQuit()" style="background:none;border:none;cursor:pointer;font-family:'Nunito';font-size:0.9rem;color:#ccc;font-weight:600;">Abandonner</button>
+  </div>
+</div>
+
+<!-- SCREEN: Résultats -->
+<div class="screen" id="screen-results">
+  <div style="text-align:center; padding:20px 0 16px;">
+    <div id="result-stars" style="font-size:2.5rem;margin-bottom:8px;"></div>
+    <div class="score-display" id="result-score"></div>
+    <div style="font-size:1rem;font-weight:700;color:#999;" id="result-label"></div>
+  </div>
+  <div class="section-label">Détail des réponses</div>
+  <div class="scroll-area" id="results-list"></div>
+  <div class="nav-row">
+    <button class="btn btn-ghost" onclick="showScreen('screen-menu')">🏠 Menu</button>
+    <button class="btn btn-primary" onclick="restartGame()">🔄 Rejouer</button>
+  </div>
+</div>
+
+<!-- SCREEN: Historique -->
+<div class="screen" id="screen-history">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+    <button class="btn btn-ghost" style="padding:10px 16px;width:auto;" onclick="showScreen('screen-menu')">←</button>
+    <h2>Mes parties</h2>
+  </div>
+  <div class="scroll-area" id="history-list"><div class="loading">Chargement...</div></div>
+</div>
+
+<!-- SCREEN: Détail partie -->
+<div class="screen" id="screen-game-detail">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+    <button class="btn btn-ghost" style="padding:10px 16px;width:auto;" onclick="showScreen('screen-history')">←</button>
+    <div>
+      <h2 id="detail-title">Partie</h2>
+      <div id="detail-score" style="color:#999;font-weight:700;font-size:0.9rem;"></div>
+    </div>
+  </div>
+  <div class="scroll-area" id="detail-list"></div>
+</div>
+
+<script>
+const SUPABASE_URL  = 'https://abdzshyefwrmhyhyhtbe.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiZHpzaHllZndybWh5aHlodGJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3NjYzNDQsImV4cCI6MjA5MjM0MjM0NH0.q3EI2vqaGliO-erT6W-p1dJRthVclydretAxsoDUM_k';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let currentUser  = null;
+let currentGame  = null;
+let questions    = [];
+let currentQ     = 0;
+let sessionLogs  = [];
+let timerInterval   = null;
+let timerSecondsLeft = 0;
+let timerEnabled = false;
+let timerValue   = 10;
+let config = {};
+
+// ── BOOT ──────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await loadUserAndGoMenu(session.user);
+
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN'  && session) await loadUserAndGoMenu(session.user);
+    if (event === 'SIGNED_OUT')            { currentUser = null; showScreen('screen-login'); }
+  });
+});
+
+async function loadUserAndGoMenu(authUser) {
+  const { data, error } = await sb
+    .from('users')
+    .upsert({ email: authUser.email, name: authUser.user_metadata?.full_name || authUser.email.split('@')[0] }, { onConflict: 'email' })
+    .select().single();
+  if (error) { showError('login-error', 'Erreur : ' + error.message); return; }
+  currentUser = data;
+  document.getElementById('menu-username').textContent = '👋 Bonjour ' + currentUser.name.split(' ')[0] + ' !';
+  showScreen('screen-menu');
+}
+
+// ── MAGIC LINK AUTH ───────────────────────────────────────
+async function sendMagicLink() {
+  const email = document.getElementById('email-input').value.trim();
+  if (!email || !email.includes('@')) {
+    showError('login-error', 'Entre une adresse email valide.');
+    return;
+  }
+  const btn = document.getElementById('magic-btn');
+  btn.textContent = '⏳ Envoi en cours...';
+  btn.disabled = true;
+
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.href }
+  });
+
+  if (error) {
+    showError('login-error', 'Erreur : ' + error.message);
+    btn.textContent = '✉️ Recevoir le lien de connexion';
+    btn.disabled = false;
+    return;
+  }
+
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('login-success').style.display = 'block';
+  document.getElementById('login-success').innerHTML = `
+    <div class="success-msg">
+      ✅ Lien envoyé à <strong>${email}</strong> !<br><br>
+      Vérifie ta boîte mail et clique sur le lien pour te connecter.<br>
+      <span style="font-size:0.85rem; color:#166534; opacity:0.7;">Tu peux fermer cet onglet après avoir cliqué sur le lien.</span>
+    </div>
+    <button class="btn btn-ghost" style="margin-top:16px; width:100%;" onclick="resetLoginForm()">← Utiliser un autre email</button>
+  `;
+}
+
+function resetLoginForm() {
+  document.getElementById('login-form').style.display = 'block';
+  document.getElementById('login-success').style.display = 'none';
+  document.getElementById('login-success').innerHTML = '';
+  document.getElementById('email-input').value = '';
+  const btn = document.getElementById('magic-btn');
+  btn.textContent = '✉️ Recevoir le lien de connexion';
+  btn.disabled = false;
+  document.getElementById('login-error').innerHTML = '';
+}
+
+async function logout() { await sb.auth.signOut(); }
+
+// ── NAVIGATION ────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  updateStepIndicators(id);
+}
+
+function updateStepIndicators(screenId) {
+  const map = { 'screen-config-1':1, 'screen-config-2':2, 'screen-config-3':3, 'screen-config-4':4 };
+  const cur = map[screenId];
+  if (!cur) return;
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('steps-' + i);
+    if (!el) continue;
+    el.innerHTML = '';
+    for (let s = 1; s <= 4; s++) {
+      const d = document.createElement('div');
+      d.className = 'step-dot' + (s === cur ? ' active' : s < cur ? ' done' : '');
+      el.appendChild(d);
+    }
+  }
+}
+
+// ── CONFIG ────────────────────────────────────────────────
+function selectCalcType(type) {
+  config.calculusType = type;
+  ['adding','multiplying','both'].forEach(t =>
+    document.getElementById('btn-' + t).className = 'choice-btn' + (t === type ? ' selected' : ''));
+  enableBtn('next-1');
+}
+
+function goToConfig2() { buildTablePicker(); showScreen('screen-config-2'); }
+
+function buildTablePicker() {
+  ['add-table-grid','mult-table-grid'].forEach(id => document.getElementById(id).innerHTML = '');
+  for (let i = 1; i <= 10; i++) {
+    const ab = document.createElement('button');
+    ab.className = 'table-btn'; ab.textContent = i + '+'; ab.dataset.table = i + '+';
+    ab.onclick = () => toggleTable(ab, i + '+');
+    document.getElementById('add-table-grid').appendChild(ab);
+    const mb = document.createElement('button');
+    mb.className = 'table-btn'; mb.textContent = i + '×'; mb.dataset.table = i + 'x';
+    mb.onclick = () => toggleTable(mb, i + 'x');
+    document.getElementById('mult-table-grid').appendChild(mb);
+  }
+}
+
+function selectTableMode(mode) {
+  config.tableMode = mode;
+  document.getElementById('btn-all-tables').className  = 'choice-btn' + (mode === 'all'  ? ' selected' : '');
+  document.getElementById('btn-some-tables').className = 'choice-btn' + (mode === 'some' ? ' selected' : '');
+  if (mode === 'some') {
+    document.getElementById('table-picker').style.display = 'block';
+    const t = config.calculusType;
+    document.getElementById('table-picker-label').textContent  = t === 'multiplying' ? 'Tables de multiplication :' : "Tables d'addition :";
+    document.getElementById('table-picker-label').style.display = 'block';
+    document.getElementById('add-table-grid').style.display   = t === 'multiplying' ? 'none' : 'grid';
+    document.getElementById('mult-label').style.display       = t === 'both'        ? 'block' : 'none';
+    document.getElementById('mult-table-grid').style.display  = t === 'adding'      ? 'none' : 'grid';
+    config.selectedTables = [];
+    disableBtn('next-2');
+  } else {
+    document.getElementById('table-picker').style.display = 'none';
+    config.selectedTables = null;
+    enableBtn('next-2');
+  }
+}
+
+function toggleTable(btn, tableKey) {
+  if (!config.selectedTables) config.selectedTables = [];
+  const idx = config.selectedTables.indexOf(tableKey);
+  if (idx >= 0) { config.selectedTables.splice(idx, 1); btn.className = 'table-btn'; }
+  else          { config.selectedTables.push(tableKey);  btn.className = 'table-btn selected'; }
+  config.selectedTables.length ? enableBtn('next-2') : disableBtn('next-2');
+}
+
+function selectOrder(order) {
+  config.orderMode = order;
+  document.getElementById('btn-sorted').className  = 'choice-btn' + (order === 'sorted'  ? ' selected' : '');
+  document.getElementById('btn-shuffle').className = 'choice-btn' + (order === 'shuffle' ? ' selected' : '');
+  enableBtn('next-3');
+}
+
+function toggleTimer() {
+  timerEnabled = !timerEnabled;
+  document.getElementById('timer-toggle').className = 'toggle' + (timerEnabled ? ' on' : '');
+  document.getElementById('timer-value-area').style.display = timerEnabled ? 'block' : 'none';
+}
+
+function changeTimer(delta) {
+  const inp = document.getElementById('timer-seconds');
+  inp.value = Math.max(3, Math.min(120, parseInt(inp.value) + delta));
+}
+
+function enableBtn(id)  { const b = document.getElementById(id); b.disabled = false; b.style.opacity = '1';   b.style.cursor = 'pointer'; }
+function disableBtn(id) { const b = document.getElementById(id); b.disabled = true;  b.style.opacity = '0.4'; b.style.cursor = 'not-allowed'; }
+
+// ── GAME START ────────────────────────────────────────────
+async function startGame() {
+  timerValue = parseInt(document.getElementById('timer-seconds').value) || 10;
+  const tableSelection = config.tableMode === 'all' ? buildAllTableSelection() : config.selectedTables.join(' ');
+
+  const { data, error } = await sb.from('games').insert({
+    user_id: currentUser.user_id, calculus_type: config.calculusType,
+    table_selection: tableSelection, order_mode: config.orderMode,
+    timer: timerEnabled, timer_value: timerEnabled ? timerValue : 0
+  }).select().single();
+
+  if (error) { alert('Erreur : ' + error.message); return; }
+  currentGame = data; sessionLogs = [];
+  questions = generateQuestions(); currentQ = 0;
+  showScreen('screen-game'); renderQuestion();
+}
+
+function buildAllTableSelection() {
+  const parts = [];
+  for (let i = 1; i <= 10; i++) {
+    if (config.calculusType !== 'multiplying') parts.push(i + '+');
+    if (config.calculusType !== 'adding')      parts.push(i + 'x');
+  }
+  return parts.join(' ');
+}
+
+function generateQuestions() {
+  const tables = config.tableMode === 'all' ? buildAllTableSelection().split(' ') : config.selectedTables;
+  const qs = [];
+  tables.forEach(tableKey => {
+    const num = parseInt(tableKey);
+    if (tableKey.endsWith('+')) for (let i = 1; i <= 10; i++) qs.push({ table: num+'+', operation: `${i} + ${num}`, answer: i+num });
+    if (tableKey.endsWith('x')) for (let i = 1; i <= 10; i++) qs.push({ table: num+'x', operation: `${i} × ${num}`, answer: i*num });
+  });
+  if (config.orderMode === 'shuffle') {
+    for (let i = qs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [qs[i], qs[j]] = [qs[j], qs[i]];
+    }
+  }
+  return qs;
+}
+
+// ── GAME LOOP ─────────────────────────────────────────────
+function renderQuestion() {
+  const q = questions[currentQ];
+  document.getElementById('game-progress').style.width = (currentQ / questions.length * 100) + '%';
+  document.getElementById('q-counter').textContent = `Question ${currentQ + 1} sur ${questions.length}`;
+  document.getElementById('operation-display').textContent = q.operation + ' = ?';
+  document.getElementById('answer-input').value = '';
+  document.getElementById('answer-input').focus();
+  document.getElementById('feedback-area').style.color = 'transparent';
+  document.getElementById('feedback-area').textContent = '-';
+  document.getElementById('streak-bar').innerHTML = sessionLogs.slice(-10).map(l =>
+    `<div class="streak-dot ${l.success ? 'ok' : 'ko'}"></div>`).join('');
+  if (timerEnabled) { document.getElementById('timer-ring').style.display = 'flex'; startTimerCountdown(); }
+}
+
+function startTimerCountdown() {
+  clearInterval(timerInterval);
+  timerSecondsLeft = timerValue;
+  updateTimerRing(timerSecondsLeft, timerValue);
+  timerInterval = setInterval(() => {
+    timerSecondsLeft--;
+    updateTimerRing(timerSecondsLeft, timerValue);
+    if (timerSecondsLeft <= 0) { clearInterval(timerInterval); timeOut(); }
+  }, 1000);
+}
+
+function updateTimerRing(left, total) {
+  const ratio = left / total;
+  document.getElementById('timer-circle').style.strokeDashoffset = 213.6 * (1 - ratio);
+  document.getElementById('timer-circle').style.stroke = ratio > 0.5 ? 'var(--green)' : ratio > 0.25 ? 'var(--yellow)' : 'var(--red)';
+  document.getElementById('timer-display').textContent = Math.max(0, left);
+  document.getElementById('timer-display').style.color = ratio > 0.5 ? 'var(--green)' : ratio > 0.25 ? 'var(--orange)' : 'var(--red)';
+}
+
+function timeOut() {
+  const q = questions[currentQ];
+  recordLog(q, null, false);
+  showFeedback(false, q.answer);
+  setTimeout(() => nextQuestion(), 1500);
+}
+
+function handleKey(e) { if (e.key === 'Enter') submitAnswer(); }
+
+function submitAnswer() {
+  clearInterval(timerInterval);
+  const q = questions[currentQ];
+  const val = parseInt(document.getElementById('answer-input').value);
+  if (isNaN(val)) return;
+  const success = val === q.answer;
+  recordLog(q, val, success);
+  showFeedback(success, q.answer);
+  setTimeout(() => nextQuestion(), 1200);
+}
+
+function recordLog(q, enteredAnswer, success) {
+  const log = { game_id: currentGame.game_id, table_key: q.table, operation: q.operation, entered_answer: enteredAnswer, success };
+  sessionLogs.push({ ...log, answer: q.answer });
+  sb.from('game_logs').insert(log).then(({ error }) => { if (error) console.error('Log error:', error.message); });
+}
+
+function showFeedback(success, correctAnswer) {
+  const fb = document.getElementById('feedback-area');
+  const op = document.getElementById('operation-display');
+  if (success) {
+    fb.textContent = '✓ Bravo !'; fb.style.color = 'var(--green)';
+    op.classList.add('bounce'); setTimeout(() => op.classList.remove('bounce'), 500);
+  } else {
+    fb.textContent = `✗ La réponse était ${correctAnswer}`; fb.style.color = 'var(--red)';
+    const inp = document.getElementById('answer-input');
+    inp.classList.add('shake'); setTimeout(() => inp.classList.remove('shake'), 400);
+  }
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= questions.length) showResults();
+  else renderQuestion();
+}
+
+// ── RESULTS ───────────────────────────────────────────────
+function showResults() {
+  clearInterval(timerInterval);
+  const correct = sessionLogs.filter(l => l.success).length;
+  const total   = sessionLogs.length;
+  const pct     = Math.round(correct / total * 100);
+  document.getElementById('result-score').textContent = `${correct} / ${total}`;
+  document.getElementById('result-label').textContent  = pct >= 90 ? 'Excellent ! 🎉' : pct >= 70 ? 'Très bien !' : pct >= 50 ? 'Continue comme ça !' : 'On va progresser !';
+  document.getElementById('result-stars').textContent  = pct >= 90 ? '⭐⭐⭐' : pct >= 70 ? '⭐⭐' : '⭐';
+  const list = document.getElementById('results-list');
+  list.innerHTML = '';
+  sessionLogs.forEach(log => {
+    const row = document.createElement('div'); row.className = 'result-row';
+    const dot = document.createElement('div'); dot.className = 'dot ' + (log.success ? 'dot-green' : 'dot-red'); dot.textContent = log.success ? '✓' : '✗';
+    const text = document.createElement('div'); text.style.flex = '1';
+    text.innerHTML = `<span style="font-size:1.1rem;">${log.operation} = <strong>${log.entered_answer !== null && log.entered_answer !== undefined ? log.entered_answer : '—'}</strong></span>`;
+    if (!log.success) {
+      const c = document.createElement('span');
+      c.style.cssText = 'font-size:0.85rem;color:var(--green);font-weight:700;display:block;';
+      c.textContent = '→ ' + log.answer;
+      text.appendChild(c);
+    }
+    row.appendChild(dot); row.appendChild(text); list.appendChild(row);
+  });
+  showScreen('screen-results');
+}
+
+function restartGame() { showScreen('screen-config-1'); }
+function confirmQuit() {
+  if (confirm('Abandonner la partie en cours ?')) { clearInterval(timerInterval); showScreen('screen-menu'); }
+}
+
+// ── HISTORY ───────────────────────────────────────────────
+async function showHistoryScreen() {
+  showScreen('screen-history');
+  document.getElementById('history-list').innerHTML = '<div class="loading">Chargement...</div>';
+
+  const [{ data: games, error }, { data: scores }] = await Promise.all([
+    sb.from('games').select('*').eq('user_id', currentUser.user_id).order('created_at', { ascending: false }),
+    sb.from('view_game_scores').select('game_id,correct_answers,total_questions').eq('user_id', currentUser.user_id)
+  ]);
+
+  if (error) { document.getElementById('history-list').innerHTML = `<div class="error-msg">Erreur : ${error.message}</div>`; return; }
+  const scoreMap = {};
+  (scores || []).forEach(s => scoreMap[s.game_id] = s);
+
+  const list = document.getElementById('history-list');
+  if (!games || games.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:#ccc;font-weight:700;padding:40px;">Aucune partie encore jouée !</div>';
+    return;
+  }
+  list.innerHTML = '';
+  games.forEach(game => {
+    const sc   = scoreMap[game.game_id] || {};
+    const date = new Date(game.created_at).toLocaleDateString('fr-FR', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
+    const item = document.createElement('div'); item.className = 'history-item';
+    item.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:800;font-size:1rem;">Partie #${game.game_id}</div>
+          <div style="font-size:0.85rem;color:#aaa;font-weight:600;">${date}</div>
+        </div>
+        <div style="font-family:'Baloo 2';font-size:1.3rem;font-weight:800;color:var(--orange);">${sc.correct_answers ?? '—'}/${sc.total_questions ?? '—'}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <span class="tag tag-orange">${game.calculus_type === 'adding' ? 'Addition' : game.calculus_type === 'multiplying' ? 'Multiplication' : 'Les deux'}</span>
+        <span class="tag tag-green">${game.order_mode === 'sorted' ? "Dans l'ordre" : 'Au hasard'}</span>
+        ${game.timer ? `<span class="tag tag-purple">⏱ ${game.timer_value}s</span>` : ''}
+      </div>`;
+    item.onclick = () => showGameDetail(game, sc);
+    list.appendChild(item);
+  });
+}
+
+async function showGameDetail(game, sc) {
+  const date = new Date(game.created_at).toLocaleDateString('fr-FR', { day:'numeric', month:'long' });
+  document.getElementById('detail-title').textContent = `Partie #${game.game_id} — ${date}`;
+  document.getElementById('detail-score').textContent = `${sc?.correct_answers ?? '—'} / ${sc?.total_questions ?? '—'} bonnes réponses`;
+  showScreen('screen-game-detail');
+  document.getElementById('detail-list').innerHTML = '<div class="loading">Chargement...</div>';
+
+  const { data: logs, error } = await sb.from('game_logs').select('*').eq('game_id', game.game_id).order('created_at', { ascending: true });
+  if (error) { document.getElementById('detail-list').innerHTML = `<div class="error-msg">Erreur : ${error.message}</div>`; return; }
+
+  const list = document.getElementById('detail-list');
+  list.innerHTML = '';
+  logs.forEach(log => {
+    const row = document.createElement('div'); row.className = 'result-row';
+    const dot = document.createElement('div'); dot.className = 'dot ' + (log.success ? 'dot-green' : 'dot-red'); dot.textContent = log.success ? '✓' : '✗';
+    const text = document.createElement('div'); text.style.flex = '1';
+    text.innerHTML = `<span style="font-size:1.05rem;">${log.operation} = <strong>${log.entered_answer !== null ? log.entered_answer : '—'}</strong></span>`;
+    const tableTag = document.createElement('span');
+    tableTag.style.cssText = 'font-size:0.75rem;color:#bbb;font-weight:600;margin-left:auto;flex-shrink:0;';
+    tableTag.textContent = log.table_key;
+    row.appendChild(dot); row.appendChild(text); row.appendChild(tableTag);
+    list.appendChild(row);
+  });
+}
+
+function showError(containerId, msg) {
+  const el = document.getElementById(containerId);
+  if (el) el.innerHTML = `<div class="error-msg">${msg}</div>`;
+}
+</script>
+</body>
+</html>
