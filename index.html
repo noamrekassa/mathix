@@ -3,345 +3,933 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mathix — Tables d'addition et de multiplication</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
+<title>Mathix 🍕</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Baloo+2:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --yellow: #FFD93D; --orange: #FF6B35; --green: #4ECDC4;
-    --purple: #A78BFA; --red: #EF4444; --dark: #1E1B4B;
-    --bg: #FFF9F0; --card: #FFFFFF;
-    --shadow: 0 8px 32px rgba(30,27,75,0.12);
-  }
-  body { font-family: 'Nunito', sans-serif; background: var(--bg); min-height: 100vh; color: var(--dark); overflow-x: hidden; }
-  .screen { display: none; padding: 24px 20px; max-width: 640px; margin: 0 auto; min-height: 100vh; flex-direction: column; }
-  .screen.active { display: flex; }
-  h2 { font-family: 'Baloo 2', cursive; font-size: 1.6rem; color: var(--dark); }
-  .card { background: var(--card); border-radius: 20px; padding: 24px; box-shadow: var(--shadow); }
-  .btn { font-family: 'Nunito', sans-serif; font-size: 1.1rem; font-weight: 800; padding: 16px 28px; border-radius: 50px; border: none; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; display: inline-flex; align-items: center; gap: 8px; justify-content: center; width: 100%; }
-  .btn-primary { background: var(--orange); color: white; box-shadow: 0 6px 0 #c94f20; }
-  .btn-primary:hover { box-shadow: 0 4px 0 #c94f20; transform: translateY(2px); }
-  .btn-primary:active { box-shadow: 0 2px 0 #c94f20; transform: translateY(4px); }
-  .btn-ghost { background: white; color: var(--dark); border: 3px solid #e5e5e5; box-shadow: 0 4px 0 #e5e5e5; width: auto; }
-  .btn-ghost:hover { box-shadow: 0 2px 0 #e5e5e5; transform: translateY(2px); }
-  .btn-green { background: var(--green); color: white; box-shadow: 0 6px 0 #35a89f; }
-  .choice-grid { display: grid; gap: 12px; }
-  .choice-btn { font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 700; padding: 18px 12px; border-radius: 16px; border: 3px solid #e5e5e5; background: white; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 6px; box-shadow: 0 4px 0 #e5e5e5; }
-  .choice-btn:hover { border-color: var(--orange); background: #fff5f0; }
-  .choice-btn.selected { border-color: var(--orange); background: #fff5f0; box-shadow: 0 4px 0 var(--orange); }
-  .emoji { font-size: 2rem; }
-  .progress-bar { height: 10px; background: #f0f0f0; border-radius: 99px; overflow: hidden; margin: 8px 0; }
-  .progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--orange), var(--yellow)); transition: width 0.3s; }
-  .nav-row { display: flex; gap: 12px; margin-top: auto; padding-top: 20px; }
-  .nav-row .btn { flex: 1; }
-  .step-indicator { display: flex; gap: 6px; margin-bottom: 20px; }
-  .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #e5e5e5; transition: background 0.2s; }
-  .step-dot.active { background: var(--orange); }
-  .step-dot.done { background: var(--green); }
-  input[type="number"] { font-family: 'Baloo 2', cursive; font-size: 2rem; font-weight: 700; text-align: center; width: 100%; padding: 16px; border-radius: 16px; border: 3px solid #e5e5e5; outline: none; color: var(--dark); background: white; transition: border-color 0.2s; -moz-appearance: textfield; }
-  input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
-  input[type="number"]:focus { border-color: var(--orange); }
-  input[type="email"] { font-family: 'Nunito', sans-serif; font-size: 1.1rem; font-weight: 600; width: 100%; padding: 16px 20px; border-radius: 50px; border: 3px solid #e5e5e5; outline: none; color: var(--dark); background: white; transition: border-color 0.2s; margin-bottom: 12px; }
-  input[type="email"]:focus { border-color: var(--orange); }
-  input[type="email"]::placeholder { color: #bbb; }
-  .operation-display { font-family: 'Baloo 2', cursive; font-size: 3.5rem; font-weight: 800; text-align: center; color: var(--dark); padding: 24px; background: white; border-radius: 20px; box-shadow: var(--shadow); }
-  .timer-ring { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
-  .timer-ring svg { transform: rotate(-90deg); }
-  .timer-ring .timer-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: 'Baloo 2', cursive; font-size: 1.4rem; font-weight: 800; }
-  .result-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: white; border: 2px solid #f0f0f0; margin-bottom: 8px; font-weight: 700; font-size: 1rem; }
-  .dot { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: 800; }
-  .dot-green { background: var(--green); }
-  .dot-red { background: var(--red); }
-  .score-display { font-family: 'Baloo 2', cursive; font-size: 4rem; font-weight: 800; text-align: center; background: linear-gradient(135deg, var(--orange), var(--yellow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-  .game-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
-  .tag { font-size: 0.85rem; font-weight: 700; padding: 4px 14px; border-radius: 99px; display: inline-block; }
-  .tag-orange { background: #fff0e8; color: var(--orange); border: 2px solid var(--orange); }
-  .tag-green { background: #effffd; color: #2a8a84; border: 2px solid var(--green); }
-  .tag-purple { background: #f5f3ff; color: #7c3aed; border: 2px solid var(--purple); }
-  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: white; border-radius: 14px; border: 3px solid #e5e5e5; cursor: pointer; font-weight: 700; font-size: 1.05rem; }
-  .toggle { width: 52px; height: 28px; background: #e5e5e5; border-radius: 99px; position: relative; transition: background 0.2s; }
-  .toggle::after { content: ''; position: absolute; width: 22px; height: 22px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left 0.2s; }
-  .toggle.on { background: var(--green); }
-  .toggle.on::after { left: 27px; }
-  .history-item { background: white; border-radius: 16px; padding: 16px; margin-bottom: 10px; border: 2px solid #f0f0f0; cursor: pointer; transition: border-color 0.15s, transform 0.1s; }
-  .history-item:hover { border-color: var(--orange); transform: translateY(-2px); }
-  .hero-bg { background: linear-gradient(135deg, #fff9f0 0%, #fff0e0 100%); border-radius: 24px; padding: 28px; text-align: center; margin-bottom: 24px; border: 3px dashed #ffd093; }
-  .hero-title { font-family: 'Baloo 2', cursive; font-size: 2.8rem; font-weight: 800; color: var(--dark); line-height: 1.1; margin-bottom: 6px; }
-  .hero-sub { font-size: 1rem; color: #888; font-weight: 600; }
-  .section-label { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #aaa; margin-bottom: 10px; }
-  .scroll-area { flex: 1; overflow-y: auto; }
-  .bounce { animation: bounce 0.5s ease; }
-  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-  .shake { animation: shake 0.4s ease; }
-  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
-  .table-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-  .table-btn { font-family: 'Baloo 2', cursive; font-size: 1.1rem; font-weight: 800; padding: 14px 8px; border-radius: 12px; border: 3px solid #e5e5e5; background: white; cursor: pointer; transition: all 0.15s; text-align: center; box-shadow: 0 3px 0 #e5e5e5; }
-  .table-btn:hover { border-color: var(--orange); background: #fff5f0; }
-  .table-btn.selected { border-color: var(--orange); background: #fff5f0; box-shadow: 0 3px 0 var(--orange); color: var(--orange); }
-  .q-counter { font-size: 0.9rem; font-weight: 700; color: #aaa; text-align: right; }
-  .streak-bar { display: flex; gap: 4px; justify-content: center; margin: 8px 0; }
-  .streak-dot { width: 12px; height: 12px; border-radius: 50%; background: #e5e5e5; }
-  .streak-dot.ok { background: var(--green); }
-  .streak-dot.ko { background: var(--red); }
-  .loading { text-align: center; padding: 40px; color: #aaa; font-weight: 700; font-size: 1rem; }
-  .error-msg { background: #fee2e2; color: #991b1b; padding: 12px 16px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; margin-bottom: 12px; }
-  .success-msg { background: #dcfce7; color: #166534; padding: 16px; border-radius: 16px; font-weight: 700; font-size: 0.95rem; text-align: center; line-height: 1.5; }
+/* ═══════════════════════════════════════════════
+   RESET & ROOT
+═══════════════════════════════════════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0a0a1a;
+  --card:    #12122a;
+  --card2:   #1a1a3a;
+  --neon1:   #ff00ff;
+  --neon2:   #00ffff;
+  --neon3:   #ffff00;
+  --neon4:   #ff6600;
+  --neon5:   #00ff88;
+  --neon6:   #ff0066;
+  --text:    #ffffff;
+  --muted:   #8888aa;
+  --radius:  18px;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(255,0,255,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(0,255,255,0.08) 0%, transparent 50%);
+}
+
+/* ═══════════════════════════════════════════════
+   SCREENS
+═══════════════════════════════════════════════ */
+.screen {
+  display: none;
+  flex-direction: column;
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 20px 16px 32px;
+}
+.screen.active { display: flex; }
+
+/* ═══════════════════════════════════════════════
+   TYPOGRAPHY
+═══════════════════════════════════════════════ */
+.title {
+  font-family: 'Baloo 2', cursive;
+  font-size: 2.8rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--neon1), var(--neon2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  filter: drop-shadow(0 0 20px rgba(255,0,255,0.5));
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: var(--muted);
+  font-weight: 700;
+  text-align: center;
+}
+
+.screen-title {
+  font-family: 'Baloo 2', cursive;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--neon2);
+  margin-bottom: 4px;
+  text-shadow: 0 0 15px rgba(0,255,255,0.6);
+}
+
+.screen-sub {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* ═══════════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════════ */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* ═══════════════════════════════════════════════
+   NEON BUTTONS
+═══════════════════════════════════════════════ */
+.btn {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 1rem;
+  padding: 14px 24px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s;
+  width: 100%;
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn:active { transform: scale(0.96); }
+
+.btn-neon1 {
+  background: linear-gradient(135deg, var(--neon1), #aa00ff);
+  color: white;
+  box-shadow: 0 0 20px rgba(255,0,255,0.5), 0 4px 0 #660088;
+}
+.btn-neon1:hover { box-shadow: 0 0 30px rgba(255,0,255,0.8), 0 4px 0 #660088; }
+
+.btn-neon2 {
+  background: linear-gradient(135deg, var(--neon2), #0088ff);
+  color: #000;
+  box-shadow: 0 0 20px rgba(0,255,255,0.5), 0 4px 0 #006688;
+}
+.btn-neon2:hover { box-shadow: 0 0 30px rgba(0,255,255,0.8), 0 4px 0 #006688; }
+
+.btn-neon3 {
+  background: linear-gradient(135deg, var(--neon3), var(--neon4));
+  color: #000;
+  box-shadow: 0 0 20px rgba(255,255,0,0.4), 0 4px 0 #886600;
+}
+
+.btn-neon5 {
+  background: linear-gradient(135deg, var(--neon5), #00aaff);
+  color: #000;
+  box-shadow: 0 0 20px rgba(0,255,136,0.5), 0 4px 0 #006644;
+}
+.btn-neon5:hover { box-shadow: 0 0 30px rgba(0,255,136,0.8), 0 4px 0 #006644; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 2px solid rgba(255,255,255,0.1);
+  width: auto;
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,0.3); color: white; }
+
+/* ═══════════════════════════════════════════════
+   CHOICE BUTTONS (config screens)
+═══════════════════════════════════════════════ */
+.choice-grid { display: grid; gap: 12px; }
+.choice-grid.cols2 { grid-template-columns: 1fr 1fr; }
+
+.choice-btn {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 1rem;
+  padding: 20px 12px;
+  border-radius: 16px;
+  border: 2px solid rgba(255,255,255,0.08);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.choice-btn:hover { border-color: var(--neon1); background: rgba(255,0,255,0.06); }
+.choice-btn:active { transform: scale(0.96); }
+
+.choice-btn.sel-pink  { border-color: var(--neon1); background: rgba(255,0,255,0.12); box-shadow: 0 0 16px rgba(255,0,255,0.3); color: var(--neon1); }
+.choice-btn.sel-cyan  { border-color: var(--neon2); background: rgba(0,255,255,0.10); box-shadow: 0 0 16px rgba(0,255,255,0.3); color: var(--neon2); }
+.choice-btn.sel-green { border-color: var(--neon5); background: rgba(0,255,136,0.10); box-shadow: 0 0 16px rgba(0,255,136,0.3); color: var(--neon5); }
+
+.choice-emoji { font-size: 2rem; line-height: 1; }
+.choice-label { font-size: 0.9rem; }
+
+/* ═══════════════════════════════════════════════
+   TABLE PICKER GRID
+═══════════════════════════════════════════════ */
+.table-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+
+.table-btn {
+  font-family: 'Baloo 2', cursive;
+  font-size: 1.1rem;
+  font-weight: 800;
+  padding: 12px 4px;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.08);
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.table-btn:hover { border-color: var(--neon1); color: var(--neon1); }
+.table-btn.sel { border-color: var(--neon1); background: rgba(255,0,255,0.12); color: var(--neon1); box-shadow: 0 0 10px rgba(255,0,255,0.3); }
+
+/* ═══════════════════════════════════════════════
+   NAV ROW
+═══════════════════════════════════════════════ */
+.nav-row { display: flex; gap: 10px; margin-top: auto; padding-top: 20px; }
+.nav-row .btn { flex: 1; }
+
+/* ═══════════════════════════════════════════════
+   STEP DOTS
+═══════════════════════════════════════════════ */
+.step-row { display: flex; gap: 6px; margin-bottom: 20px; }
+.step-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.1); transition: all 0.2s; }
+.step-dot.active { background: var(--neon1); box-shadow: 0 0 8px var(--neon1); width: 24px; border-radius: 4px; }
+.step-dot.done { background: var(--neon5); }
+
+/* ═══════════════════════════════════════════════
+   SECTION LABEL
+═══════════════════════════════════════════════ */
+.label {
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+/* ═══════════════════════════════════════════════
+   TOGGLE
+═══════════════════════════════════════════════ */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; background: var(--card); border-radius: 14px;
+  border: 2px solid rgba(255,255,255,0.06); cursor: pointer; font-weight: 700;
+}
+.toggle { width: 52px; height: 28px; background: rgba(255,255,255,0.1); border-radius: 99px; position: relative; transition: background 0.2s; flex-shrink: 0; }
+.toggle::after { content: ''; position: absolute; width: 22px; height: 22px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: left 0.2s; }
+.toggle.on { background: var(--neon5); box-shadow: 0 0 10px rgba(0,255,136,0.5); }
+.toggle.on::after { left: 27px; }
+
+/* ═══════════════════════════════════════════════
+   MENU PRINCIPAL
+═══════════════════════════════════════════════ */
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+.menu-btn {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 0.95rem;
+  padding: 20px 12px;
+  border-radius: 18px;
+  border: 2px solid rgba(255,255,255,0.06);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.menu-btn:hover { transform: translateY(-3px); }
+.menu-btn:active { transform: scale(0.96); }
+.menu-btn .menu-icon { font-size: 2.2rem; }
+
+.mb-play   { border-color: rgba(255,0,255,0.3); background: rgba(255,0,255,0.06); }
+.mb-play:hover { box-shadow: 0 0 20px rgba(255,0,255,0.3); border-color: var(--neon1); }
+.mb-hist   { border-color: rgba(0,255,255,0.3); background: rgba(0,255,255,0.06); }
+.mb-hist:hover { box-shadow: 0 0 20px rgba(0,255,255,0.3); border-color: var(--neon2); }
+.mb-rev    { border-color: rgba(255,255,0,0.3); background: rgba(255,255,0,0.06); }
+.mb-rev:hover { box-shadow: 0 0 20px rgba(255,255,0,0.3); border-color: var(--neon3); }
+.mb-rew    { border-color: rgba(255,102,0,0.3); background: rgba(255,102,0,0.06); }
+.mb-rew:hover { box-shadow: 0 0 20px rgba(255,102,0,0.3); border-color: var(--neon4); }
+.mb-myr    { border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.06); }
+.mb-myr:hover { box-shadow: 0 0 20px rgba(0,255,136,0.3); border-color: var(--neon5); }
+
+/* ═══════════════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════════════ */
+.hero {
+  text-align: center;
+  padding: 40px 0 32px;
+}
+.hero-logo { font-size: 5rem; margin-bottom: 8px; filter: drop-shadow(0 0 20px rgba(255,0,255,0.6)); }
+
+input[type="email"] {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 50px;
+  border: 2px solid rgba(255,255,255,0.1);
+  background: var(--card2);
+  color: white;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 12px;
+}
+input[type="email"]:focus { border-color: var(--neon1); box-shadow: 0 0 15px rgba(255,0,255,0.2); }
+input[type="email"]::placeholder { color: var(--muted); }
+
+/* ═══════════════════════════════════════════════
+   GAME SCREEN
+═══════════════════════════════════════════════ */
+.game-header { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+
+.progress-bar { height: 8px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; flex: 1; }
+.progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--neon1), var(--neon2)); transition: width 0.4s; box-shadow: 0 0 8px var(--neon1); }
+
+.q-counter { font-size: 0.8rem; font-weight: 800; color: var(--muted); white-space: nowrap; }
+
+/* Timer ring */
+.timer-ring { position: relative; width: 72px; height: 72px; flex-shrink: 0; display: none; }
+.timer-ring svg { transform: rotate(-90deg); }
+.timer-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: 'Baloo 2', cursive; font-size: 1.3rem; font-weight: 900; }
+
+/* Streak */
+.streak-bar { display: flex; gap: 5px; justify-content: center; margin-bottom: 12px; min-height: 16px; }
+.streak-dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.08); transition: all 0.2s; }
+.streak-dot.ok { background: var(--neon5); box-shadow: 0 0 6px var(--neon5); }
+.streak-dot.ko { background: var(--neon6); box-shadow: 0 0 6px var(--neon6); }
+
+/* Operation display */
+.operation-wrap {
+  background: var(--card);
+  border-radius: 24px;
+  padding: 28px 20px;
+  text-align: center;
+  border: 2px solid rgba(255,0,255,0.2);
+  box-shadow: 0 0 30px rgba(255,0,255,0.1), inset 0 0 30px rgba(255,0,255,0.03);
+  margin-bottom: 12px;
+}
+
+.table-badge {
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--neon1);
+  margin-bottom: 8px;
+  text-shadow: 0 0 8px var(--neon1);
+}
+
+.operation-text {
+  font-family: 'Baloo 2', cursive;
+  font-size: 3.8rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, white, #ccccff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.feedback-area {
+  text-align: center;
+  min-height: 30px;
+  font-family: 'Baloo 2', cursive;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: transparent;
+  margin-bottom: 12px;
+  transition: color 0.1s;
+}
+
+input[type="number"] {
+  font-family: 'Baloo 2', cursive;
+  font-size: 2.5rem;
+  font-weight: 900;
+  text-align: center;
+  width: 100%;
+  padding: 14px;
+  border-radius: 18px;
+  border: 2px solid rgba(255,255,255,0.1);
+  background: var(--card);
+  color: white;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -moz-appearance: textfield;
+  margin-bottom: 12px;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input[type="number"]:focus { border-color: var(--neon2); box-shadow: 0 0 15px rgba(0,255,255,0.2); }
+
+/* ═══════════════════════════════════════════════
+   PIZZA REWARD
+═══════════════════════════════════════════════ */
+.pizza-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; flex-direction: column; gap: 20px;
+  backdrop-filter: blur(6px);
+}
+.pizza-overlay.hidden { display: none; }
+
+.pizza-title {
+  font-family: 'Baloo 2', cursive;
+  font-size: 1.8rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--neon3), var(--neon4));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+}
+
+.pizza-subtitle { color: var(--muted); font-weight: 700; font-size: 0.9rem; text-align: center; }
+
+.pizza-svg-wrap { position: relative; width: 220px; height: 220px; }
+
+.pizza-continue {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 1rem;
+  padding: 14px 32px;
+  border-radius: 50px;
+  border: none;
+  background: linear-gradient(135deg, var(--neon3), var(--neon4));
+  color: #000;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(255,255,0,0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ═══════════════════════════════════════════════
+   RESULTS
+═══════════════════════════════════════════════ */
+.score-big {
+  font-family: 'Baloo 2', cursive;
+  font-size: 4.5rem;
+  font-weight: 900;
+  text-align: center;
+  background: linear-gradient(135deg, var(--neon1), var(--neon2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 20px rgba(255,0,255,0.4));
+  line-height: 1;
+}
+
+.result-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: 14px;
+  background: var(--card); border: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 8px; font-weight: 700; font-size: 0.95rem;
+}
+.rdot { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; }
+.rdot-ok { background: var(--neon5); color: #000; box-shadow: 0 0 8px var(--neon5); }
+.rdot-ko { background: var(--neon6); color: white; box-shadow: 0 0 8px var(--neon6); }
+
+/* ═══════════════════════════════════════════════
+   HISTORY
+═══════════════════════════════════════════════ */
+.history-item {
+  background: var(--card); border-radius: 16px; padding: 14px;
+  margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer; transition: all 0.15s;
+}
+.history-item:hover { border-color: var(--neon1); box-shadow: 0 0 15px rgba(255,0,255,0.15); transform: translateY(-2px); }
+
+/* ═══════════════════════════════════════════════
+   TAGS
+═══════════════════════════════════════════════ */
+.tag {
+  font-size: 0.72rem; font-weight: 900; padding: 3px 10px;
+  border-radius: 99px; display: inline-block; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.tag-pink   { background: rgba(255,0,255,0.15); color: var(--neon1); border: 1px solid rgba(255,0,255,0.3); }
+.tag-cyan   { background: rgba(0,255,255,0.10); color: var(--neon2); border: 1px solid rgba(0,255,255,0.3); }
+.tag-yellow { background: rgba(255,255,0,0.10); color: var(--neon3); border: 1px solid rgba(255,255,0,0.3); }
+.tag-green  { background: rgba(0,255,136,0.10); color: var(--neon5); border: 1px solid rgba(0,255,136,0.3); }
+.tag-orange { background: rgba(255,102,0,0.15); color: var(--neon4); border: 1px solid rgba(255,102,0,0.3); }
+
+/* ═══════════════════════════════════════════════
+   REVIEW SCREEN
+═══════════════════════════════════════════════ */
+.review-table {
+  background: var(--card); border-radius: 18px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06); margin-bottom: 16px;
+}
+.review-header {
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.04);
+  font-family: 'Baloo 2', cursive;
+  font-size: 1.1rem; font-weight: 900; color: var(--neon2);
+  text-shadow: 0 0 10px rgba(0,255,255,0.4);
+}
+.review-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 16px; border-top: 1px solid rgba(255,255,255,0.04);
+  font-weight: 700; font-size: 0.95rem;
+}
+.review-op { color: var(--muted); }
+.review-ans { font-family: 'Baloo 2', cursive; font-size: 1.1rem; color: var(--neon3); text-shadow: 0 0 8px rgba(255,255,0,0.4); }
+
+/* ═══════════════════════════════════════════════
+   REWARDS CONFIG
+═══════════════════════════════════════════════ */
+.reward-table {
+  background: var(--card); border-radius: 18px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06); margin-bottom: 16px;
+}
+.reward-header {
+  padding: 14px 16px;
+  background: rgba(255,102,0,0.08);
+  font-family: 'Baloo 2', cursive;
+  font-size: 1.1rem; font-weight: 900; color: var(--neon4);
+  text-shadow: 0 0 10px rgba(255,102,0,0.4);
+}
+.reward-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 16px; border-top: 1px solid rgba(255,255,255,0.04);
+  font-weight: 700; font-size: 0.9rem;
+}
+.reward-row label { color: var(--muted); }
+input.reward-input {
+  font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 900;
+  width: 64px; padding: 6px 8px; border-radius: 10px;
+  border: 2px solid rgba(255,102,0,0.3); background: var(--card2);
+  color: var(--neon4); text-align: center; outline: none;
+  -moz-appearance: textfield;
+}
+input.reward-input::-webkit-outer-spin-button,
+input.reward-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+input.reward-input:focus { border-color: var(--neon4); box-shadow: 0 0 10px rgba(255,102,0,0.3); }
+
+/* ═══════════════════════════════════════════════
+   MY REWARDS SCREEN
+═══════════════════════════════════════════════ */
+.reward-card {
+  background: var(--card); border-radius: 18px; padding: 16px;
+  border: 1px solid rgba(255,102,0,0.2); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 16px;
+}
+.reward-pizza-mini { width: 60px; height: 60px; flex-shrink: 0; }
+.reward-info { flex: 1; }
+.reward-name { font-weight: 900; font-size: 1rem; margin-bottom: 4px; }
+.reward-progress { font-size: 0.85rem; color: var(--muted); font-weight: 700; }
+.pizza-parts-bar { display: flex; gap: 4px; margin-top: 6px; }
+.part-dot { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); }
+.part-dot.earned { background: var(--neon4); box-shadow: 0 0 6px var(--neon4); border-color: var(--neon4); }
+
+/* ═══════════════════════════════════════════════
+   MISC
+═══════════════════════════════════════════════ */
+.scroll-area { flex: 1; overflow-y: auto; }
+.loading { text-align: center; padding: 40px; color: var(--muted); font-weight: 700; }
+.error-msg { background: rgba(255,0,102,0.15); color: var(--neon6); padding: 12px 16px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; margin-bottom: 12px; border: 1px solid rgba(255,0,102,0.3); }
+.success-msg { background: rgba(0,255,136,0.1); color: var(--neon5); padding: 16px; border-radius: 16px; font-weight: 700; text-align: center; border: 1px solid rgba(0,255,136,0.3); line-height: 1.6; }
+
+.back-row { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.back-row h2 { font-family: 'Baloo 2', cursive; font-size: 1.4rem; font-weight: 900; color: var(--neon2); text-shadow: 0 0 10px rgba(0,255,255,0.4); }
+
+/* ═══════════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════════ */
+.bounce { animation: bounce 0.5s ease; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+
+.shake { animation: shake 0.4s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
+.pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+@keyframes pop { 0%{transform:scale(0.8);opacity:0} 100%{transform:scale(1);opacity:1} }
+
+@keyframes glow-pulse {
+  0%,100% { filter: drop-shadow(0 0 8px var(--neon4)); }
+  50%      { filter: drop-shadow(0 0 20px var(--neon4)) drop-shadow(0 0 40px var(--neon3)); }
+}
+
+.neon-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--neon1), transparent);
+  margin: 16px 0;
+  opacity: 0.3;
+}
+
+/* Timer text color */
+.timer-ok   { color: var(--neon5); text-shadow: 0 0 10px var(--neon5); }
+.timer-warn { color: var(--neon3); text-shadow: 0 0 10px var(--neon3); }
+.timer-danger { color: var(--neon6); text-shadow: 0 0 10px var(--neon6); }
 </style>
 </head>
 <body>
 
-<!-- SCREEN: Login -->
+<!-- ═══════ PIZZA OVERLAY ═══════ -->
+<div class="pizza-overlay hidden" id="pizza-overlay">
+  <div class="pizza-title" id="pizza-overlay-title">🍕 Table complétée !</div>
+  <div class="pizza-subtitle" id="pizza-overlay-sub"></div>
+  <div class="pizza-svg-wrap">
+    <svg id="pizza-svg" viewBox="0 0 200 200" width="220" height="220"></svg>
+  </div>
+  <div class="pizza-subtitle" id="pizza-parts-label"></div>
+  <button class="pizza-continue" onclick="closePizzaOverlay()">Continuer →</button>
+</div>
+
+<!-- ═══════ LOGIN ═══════ -->
 <div class="screen active" id="screen-login">
-  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:24px;">
-    <div class="hero-bg">
-      <div style="font-size:4rem; margin-bottom:8px;">🧮</div>
-      <div class="hero-title">Mathix !</div>
-      <div class="hero-sub">Entraîne-toi aux tables d'addition et de multiplication</div>
+  <div class="hero">
+    <div class="hero-logo">🧮</div>
+    <div class="title">Mathix !</div>
+    <div class="subtitle" style="margin-top:6px;">Maîtrise les tables comme un pro</div>
+  </div>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="label">Connexion magique ✨</div>
+    <p style="font-size:0.9rem;color:var(--muted);margin-bottom:16px;font-weight:700;">Entre ton email, on t'envoie un lien de connexion</p>
+    <div id="login-error"></div>
+    <div id="login-form">
+      <input type="email" id="email-input" placeholder="ton@email.com" onkeydown="if(event.key==='Enter') sendMagicLink()">
+      <button class="btn btn-neon1" onclick="sendMagicLink()" id="magic-btn">✉️ Recevoir le lien</button>
     </div>
-    <div class="card">
-      <div class="section-label">Connexion</div>
-      <p style="font-size:1rem; color:#666; margin-bottom:20px; font-weight:600;">Entre ton email, on t'envoie un lien magique ✨</p>
-      <div id="login-error"></div>
-      <div id="login-form">
-        <input type="email" id="email-input" placeholder="ton@email.com" onkeydown="if(event.key==='Enter') sendMagicLink()">
-        <button class="btn btn-primary" onclick="sendMagicLink()" id="magic-btn">
-          ✉️ Recevoir le lien de connexion
-        </button>
-      </div>
-      <div id="login-success" style="display:none;"></div>
-    </div>
+    <div id="login-success" style="display:none;"></div>
   </div>
 </div>
 
-<!-- SCREEN: Menu -->
+<!-- ═══════ MENU ═══════ -->
 <div class="screen" id="screen-menu">
-  <div class="hero-bg" style="margin-bottom:20px;">
-    <div style="font-size:2.5rem; margin-bottom:4px;">🧮</div>
-    <div class="hero-title" style="font-size:2rem;">Mathix !</div>
-    <div id="menu-username" class="hero-sub"></div>
+  <div style="text-align:center; padding: 24px 0 20px;">
+    <div style="font-size:3rem; filter:drop-shadow(0 0 20px rgba(255,0,255,0.6));">🧮</div>
+    <div class="title" style="font-size:2.2rem;">Mathix !</div>
+    <div id="menu-username" class="subtitle" style="margin-top:4px;"></div>
   </div>
-  <div style="display:flex; flex-direction:column; gap:14px; flex:1;">
-    <button class="btn btn-primary" style="font-size:1.3rem; padding:20px;" onclick="showScreen('screen-config-1')">▶ Nouveau jeu</button>
-    <button class="btn btn-ghost" style="font-size:1.1rem; width:100%;" onclick="showHistoryScreen()">📋 Mes parties</button>
+
+  <div class="menu-grid">
+    <button class="menu-btn mb-play" onclick="showScreen('screen-config-1')">
+      <span class="menu-icon">🎮</span>
+      <span>Nouveau jeu</span>
+    </button>
+    <button class="menu-btn mb-hist" onclick="showHistoryScreen()">
+      <span class="menu-icon">📋</span>
+      <span>Mes parties</span>
+    </button>
+    <button class="menu-btn mb-rev" onclick="showReviewMenu()">
+      <span class="menu-icon">📖</span>
+      <span>Réviser</span>
+    </button>
+    <button class="menu-btn mb-rew" onclick="showScreen('screen-rewards-config')">
+      <span class="menu-icon">🎁</span>
+      <span>Récompenses</span>
+    </button>
   </div>
-  <div style="text-align:center; padding-top:20px;">
-    <button onclick="logout()" style="background:none; border:none; cursor:pointer; font-family:'Nunito'; font-size:0.9rem; color:#bbb; font-weight:600;">Se déconnecter</button>
+  <button class="menu-btn mb-myr" style="width:100%;" onclick="showMyRewardsScreen()">
+    <span class="menu-icon">🍕</span>
+    <span>Mes récompenses</span>
+  </button>
+
+  <div style="text-align:center;padding-top:20px;">
+    <button onclick="logout()" style="background:none;border:none;cursor:pointer;font-family:'Nunito';font-size:0.85rem;color:var(--muted);font-weight:700;">Se déconnecter</button>
   </div>
 </div>
 
-<!-- SCREEN: Config 1 -->
+<!-- ═══════ CONFIG 1 — Type de calcul ═══════ -->
 <div class="screen" id="screen-config-1">
-  <div class="step-indicator" id="steps-1"></div>
-  <h2 style="margin-bottom:6px;">Quel type de calcul ?</h2>
-  <p style="color:#999; font-weight:600; margin-bottom:24px; font-size:0.95rem;">Choisis ce que tu veux réviser</p>
+  <div class="step-row" id="steps-1"></div>
+  <div class="screen-title">Quel type de calcul ?</div>
+  <div class="screen-sub">Choisis et on y va !</div>
   <div class="choice-grid">
-    <button class="choice-btn" id="btn-adding" onclick="selectCalcType('adding')"><span class="emoji">➕</span><span>Addition</span></button>
-    <button class="choice-btn" id="btn-multiplying" onclick="selectCalcType('multiplying')"><span class="emoji">✖️</span><span>Multiplication</span></button>
-    <button class="choice-btn" id="btn-both" onclick="selectCalcType('both')" style="grid-column:1/-1;"><span class="emoji">🔀</span><span>Les deux !</span></button>
+    <button class="choice-btn" id="btn-adding" onclick="selectCalcType('adding')">
+      <span class="choice-emoji">➕</span><span class="choice-label">Addition</span>
+    </button>
+    <button class="choice-btn" id="btn-multiplying" onclick="selectCalcType('multiplying')">
+      <span class="choice-emoji">✖️</span><span class="choice-label">Multiplication</span>
+    </button>
+    <button class="choice-btn" id="btn-both" onclick="selectCalcType('both')" style="grid-column:1/-1;">
+      <span class="choice-emoji">🔀</span><span class="choice-label">Les deux !</span>
+    </button>
   </div>
   <div class="nav-row">
-    <button class="btn btn-ghost" onclick="showScreen('screen-menu')">← Retour</button>
-    <button class="btn btn-primary" id="next-1" onclick="goToConfig2()" disabled style="opacity:0.4;cursor:not-allowed;">Suivant →</button>
+    <button class="btn btn-ghost" onclick="showScreen('screen-menu')">← Menu</button>
   </div>
 </div>
 
-<!-- SCREEN: Config 2 -->
+<!-- ═══════ CONFIG 2 — Tables ═══════ -->
 <div class="screen" id="screen-config-2">
-  <div class="step-indicator" id="steps-2"></div>
-  <h2 style="margin-bottom:6px;">Quelles tables ?</h2>
-  <p style="color:#999; font-weight:600; margin-bottom:20px; font-size:0.95rem;">Toutes ou tu préfères choisir ?</p>
-  <div class="choice-grid" style="grid-template-columns:1fr 1fr; margin-bottom:20px;">
-    <button class="choice-btn" id="btn-all-tables" onclick="selectTableMode('all')"><span class="emoji">🌟</span><span>Toutes les tables</span></button>
-    <button class="choice-btn" id="btn-some-tables" onclick="selectTableMode('some')"><span class="emoji">🎯</span><span>Certaines tables</span></button>
+  <div class="step-row" id="steps-2"></div>
+  <div class="screen-title">Quelles tables ?</div>
+  <div class="screen-sub">Toutes ou certaines ?</div>
+
+  <div class="choice-grid cols2" style="margin-bottom:16px;">
+    <button class="choice-btn sel-pink" id="btn-some-tables" onclick="selectTableMode('some')">
+      <span class="choice-emoji">🎯</span><span class="choice-label">Certaines tables</span>
+    </button>
+    <button class="choice-btn" id="btn-all-tables" onclick="selectTableMode('all')">
+      <span class="choice-emoji">🌟</span><span class="choice-label">Toutes les tables</span>
+    </button>
   </div>
-  <div id="table-picker" style="display:none;">
-    <div class="section-label" id="table-picker-label">Choisis les tables :</div>
+
+  <div id="table-picker">
+    <div class="label" id="add-label" style="display:none;">Tables d'addition</div>
     <div class="table-grid" id="add-table-grid" style="display:none; margin-bottom:14px;"></div>
-    <div class="section-label" id="mult-label" style="display:none;">Tables de multiplication :</div>
+    <div class="label" id="mult-label" style="display:none;">Tables de multiplication</div>
     <div class="table-grid" id="mult-table-grid" style="display:none;"></div>
   </div>
+
   <div class="nav-row">
     <button class="btn btn-ghost" onclick="showScreen('screen-config-1')">← Retour</button>
-    <button class="btn btn-primary" id="next-2" onclick="showScreen('screen-config-3')" disabled style="opacity:0.4;cursor:not-allowed;">Suivant →</button>
+    <button class="btn btn-neon1" id="next-2" onclick="showScreen('screen-config-3')" disabled style="opacity:0.3;cursor:not-allowed;">Suivant →</button>
   </div>
 </div>
 
-<!-- SCREEN: Config 3 -->
+<!-- ═══════ CONFIG 3 — Ordre ═══════ -->
 <div class="screen" id="screen-config-3">
-  <div class="step-indicator" id="steps-3"></div>
-  <h2 style="margin-bottom:6px;">Dans quel ordre ?</h2>
-  <p style="color:#999; font-weight:600; margin-bottom:24px; font-size:0.95rem;">Comment les questions vont apparaître</p>
+  <div class="step-row" id="steps-3"></div>
+  <div class="screen-title">Dans quel ordre ?</div>
+  <div class="screen-sub">Choisis et c'est parti !</div>
   <div class="choice-grid">
-    <button class="choice-btn" id="btn-sorted" onclick="selectOrder('sorted')"><span class="emoji">📋</span><span style="font-size:0.9rem;">Dans l'ordre</span><span style="font-size:0.75rem;color:#aaa;font-weight:600;">Table par table</span></button>
-    <button class="choice-btn" id="btn-shuffle" onclick="selectOrder('shuffle')"><span class="emoji">🎲</span><span style="font-size:0.9rem;">Au hasard</span><span style="font-size:0.75rem;color:#aaa;font-weight:600;">Questions mélangées</span></button>
+    <button class="choice-btn" id="btn-sorted" onclick="selectOrder('sorted')">
+      <span class="choice-emoji">📋</span>
+      <span class="choice-label">Dans l'ordre</span>
+      <span style="font-size:0.75rem;color:var(--muted);">Table par table</span>
+    </button>
+    <button class="choice-btn" id="btn-shuffle" onclick="selectOrder('shuffle')">
+      <span class="choice-emoji">🎲</span>
+      <span class="choice-label">Au hasard</span>
+      <span style="font-size:0.75rem;color:var(--muted);">Questions mélangées</span>
+    </button>
   </div>
   <div class="nav-row">
     <button class="btn btn-ghost" onclick="showScreen('screen-config-2')">← Retour</button>
-    <button class="btn btn-primary" id="next-3" onclick="showScreen('screen-config-4')" disabled style="opacity:0.4;cursor:not-allowed;">Suivant →</button>
   </div>
 </div>
 
-<!-- SCREEN: Config 4 -->
+<!-- ═══════ CONFIG 4 — Timer ═══════ -->
 <div class="screen" id="screen-config-4">
-  <div class="step-indicator" id="steps-4"></div>
-  <h2 style="margin-bottom:6px;">Compte à rebours ?</h2>
-  <p style="color:#999; font-weight:600; margin-bottom:24px; font-size:0.95rem;">Tu peux t'imposer un temps limite !</p>
-  <div class="card" style="margin-bottom:16px;">
+  <div class="step-row" id="steps-4"></div>
+  <div class="screen-title">Compte à rebours ?</div>
+  <div class="screen-sub">Facultatif — mets la pression !</div>
+
+  <div class="card" style="margin-bottom:14px;">
     <div class="toggle-row" onclick="toggleTimer()">
-      <span style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.4rem;">⏱️</span> Activer le timer</span>
+      <span style="display:flex;align-items:center;gap:10px;font-weight:800;">⏱️ Activer le timer</span>
       <div class="toggle" id="timer-toggle"></div>
     </div>
   </div>
-  <div id="timer-value-area" style="display:none; margin-top:8px;">
-    <div class="section-label">Secondes par question</div>
-    <div style="display:flex; align-items:center; gap:12px;">
-      <button onclick="changeTimer(-5)" class="btn btn-ghost" style="padding:12px 20px;font-size:1.2rem;flex-shrink:0;width:auto;">−5</button>
+
+  <div id="timer-value-area" style="display:none; margin-bottom:16px;">
+    <div class="label">Secondes par question</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button onclick="changeTimer(-5)" class="btn btn-ghost" style="padding:10px 18px;font-size:1.1rem;width:auto;">−5</button>
       <input type="number" id="timer-seconds" value="10" min="3" max="120">
-      <button onclick="changeTimer(5)" class="btn btn-ghost" style="padding:12px 20px;font-size:1.2rem;flex-shrink:0;width:auto;">+5</button>
+      <button onclick="changeTimer(5)" class="btn btn-ghost" style="padding:10px 18px;font-size:1.1rem;width:auto;">+5</button>
     </div>
   </div>
+
   <div class="nav-row">
     <button class="btn btn-ghost" onclick="showScreen('screen-config-3')">← Retour</button>
-    <button class="btn btn-primary" style="font-size:1.2rem;" onclick="startGame()">Jouer ! 🚀</button>
+    <button class="btn btn-neon5" onclick="startGame()">🚀 Jouer !</button>
   </div>
 </div>
 
-<!-- SCREEN: Jeu -->
+<!-- ═══════ JEU ═══════ -->
 <div class="screen" id="screen-game">
   <div class="game-header">
-    <div style="flex:1;">
-      <div class="progress-bar"><div class="progress-fill" id="game-progress"></div></div>
-      <div class="q-counter" id="q-counter"></div>
-    </div>
-    <div class="timer-ring" id="timer-ring" style="display:none;">
-      <svg width="80" height="80">
-        <circle cx="40" cy="40" r="34" fill="none" stroke="#f0f0f0" stroke-width="6"/>
-        <circle cx="40" cy="40" r="34" fill="none" stroke="var(--orange)" stroke-width="6" stroke-dasharray="213.6" id="timer-circle" stroke-linecap="round"/>
+    <div class="progress-bar"><div class="progress-fill" id="game-progress"></div></div>
+    <div class="q-counter" id="q-counter"></div>
+    <div class="timer-ring" id="timer-ring">
+      <svg width="72" height="72">
+        <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="5"/>
+        <circle cx="36" cy="36" r="30" fill="none" stroke="var(--neon5)" stroke-width="5" stroke-dasharray="188.5" id="timer-circle" stroke-linecap="round"/>
       </svg>
-      <div class="timer-text" id="timer-display">10</div>
+      <div class="timer-text timer-ok" id="timer-display">10</div>
     </div>
   </div>
+
   <div id="streak-bar" class="streak-bar"></div>
-  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:20px;">
-    <div class="operation-display" id="operation-display">?</div>
-    <div id="feedback-area" style="text-align:center;min-height:32px;font-family:'Baloo 2';font-size:1.2rem;font-weight:800;color:transparent;">-</div>
-    <input type="number" id="answer-input" placeholder="Ta réponse..." onkeydown="handleKey(event)">
-    <button class="btn btn-green" style="font-size:1.2rem;padding:18px;" onclick="submitAnswer()">✓ Valider</button>
+
+  <div class="operation-wrap">
+    <div class="table-badge" id="table-badge">Table des 5×</div>
+    <div class="operation-text" id="operation-display">?</div>
   </div>
-  <div style="text-align:center;padding-top:12px;">
-    <button onclick="confirmQuit()" style="background:none;border:none;cursor:pointer;font-family:'Nunito';font-size:0.9rem;color:#ccc;font-weight:600;">Abandonner</button>
+
+  <div class="feedback-area" id="feedback-area">-</div>
+
+  <input type="number" id="answer-input" placeholder="?" onkeydown="handleKey(event)">
+  <button class="btn btn-neon5" style="font-size:1.1rem;padding:16px;" onclick="submitAnswer()">✓ Valider</button>
+
+  <div style="text-align:center;padding-top:14px;">
+    <button onclick="confirmQuit()" style="background:none;border:none;cursor:pointer;font-family:'Nunito';font-size:0.85rem;color:var(--muted);font-weight:700;">Abandonner</button>
   </div>
 </div>
 
-<!-- SCREEN: Résultats -->
+<!-- ═══════ RÉSULTATS ═══════ -->
 <div class="screen" id="screen-results">
-  <div style="text-align:center; padding:20px 0 16px;">
-    <div id="result-stars" style="font-size:2.5rem;margin-bottom:8px;"></div>
-    <div class="score-display" id="result-score"></div>
-    <div style="font-size:1rem;font-weight:700;color:#999;" id="result-label"></div>
+  <div style="text-align:center;padding:24px 0 16px;">
+    <div id="result-stars" style="font-size:2.8rem;margin-bottom:8px;"></div>
+    <div class="score-big" id="result-score"></div>
+    <div style="font-size:1rem;font-weight:800;color:var(--muted);margin-top:6px;" id="result-label"></div>
   </div>
-  <div class="section-label">Détail des réponses</div>
+  <div class="label">Détail des réponses</div>
   <div class="scroll-area" id="results-list"></div>
   <div class="nav-row">
     <button class="btn btn-ghost" onclick="showScreen('screen-menu')">🏠 Menu</button>
-    <button class="btn btn-primary" onclick="restartGame()">🔄 Rejouer</button>
+    <button class="btn btn-neon1" onclick="restartGame()">🔄 Rejouer</button>
   </div>
 </div>
 
-<!-- SCREEN: Historique -->
+<!-- ═══════ HISTORIQUE ═══════ -->
 <div class="screen" id="screen-history">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+  <div class="back-row">
     <button class="btn btn-ghost" style="padding:10px 16px;width:auto;" onclick="showScreen('screen-menu')">←</button>
     <h2>Mes parties</h2>
   </div>
   <div class="scroll-area" id="history-list"><div class="loading">Chargement...</div></div>
 </div>
 
-<!-- SCREEN: Détail partie -->
+<!-- ═══════ DÉTAIL PARTIE ═══════ -->
 <div class="screen" id="screen-game-detail">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+  <div class="back-row">
     <button class="btn btn-ghost" style="padding:10px 16px;width:auto;" onclick="showScreen('screen-history')">←</button>
     <div>
       <h2 id="detail-title">Partie</h2>
-      <div id="detail-score" style="color:#999;font-weight:700;font-size:0.9rem;"></div>
+      <div id="detail-score" style="color:var(--muted);font-weight:700;font-size:0.85rem;"></div>
     </div>
   </div>
   <div class="scroll-area" id="detail-list"></div>
 </div>
 
+<!-- ═══════ RÉVISION — menu ═══════ -->
+<div class="screen" id="screen-review-menu">
+  <div class="back-row">
+    <button class="btn btn-ghost" style="padding:10px 16px;width:auto;" onclick="showScreen('screen-menu')">←</button>
+    <h2 style="color:var(--neon3);text-shadow:0 0 10px rgba(255,255,0,0.4);">Réviser</h2>
+  </div>
+  <div class="choice-grid">
+    <button class="choice-btn" onclick="showReview('adding')">
+      <span class="choice-emoji">➕</span><span class="choice-label">Tables d'addition</span>
+    </button>
+    <button class="choice-btn" onclick="showReview('multiplying')">
+      <span class="choice-emoji">✖️</span><span class="choice-label">Tables de multiplication</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════ RÉVISION — tables ═══════ -->
+<div class="screen" id="screen-review-tables">
+  <div class="back-row">
+    <button class="btn btn-ghost" style="padding:10px 16px;width:auto;" onclick="showScreen('screen-review-menu')">←</button>
+    <h2 id="review-title" style="color:var(--neon3);text-shadow:0 0 10px rgba(255,255,0,0.4);">Tables</h2>
+  </div>
+  <div class="scroll-area" id="review-content"></div>
+</div>
+
+<!-- ═══════ RÉCOMPENSES — config ═══════ -->
+<div class="screen" id="screen-rewards-config">
+  <div class="back-row">
+    <button class="btn btn-ghost" style="padding:10px 16px;width:auto;" onclick="showScreen('screen-menu')">←</button>
+    <h2 style="color:var(--neon4);text-shadow:0 0 10px rgba(255,102,0,0.4);">Récompenses 🎁</h2>
+  </div>
+  <p style="font-size:0.85rem;color:var(--muted);font-weight:700;margin-bottom:16px;">Pour les parents — définissez combien de 🍕 parts gagne l'enfant par table complétée (sur 10 bonnes réponses).</p>
+  <div class="scroll-area" id="rewards-config-list"></div>
+  <div style="padding-top:16px;">
+    <button class="btn btn-neon4" style="background:linear-gradient(135deg,var(--neon4),#ff0066);box-shadow:0 0 20px rgba(255,102,0,0.4);color:#000;" onclick="saveRewards()">💾 Sauvegarder</button>
+  </div>
+</div>
+
+<!-- ═══════ MES RÉCOMPENSES ═══════ -->
+<div class="screen" id="screen-my-rewards">
+  <div class="back-row">
+    <button class="btn btn-ghost" style="padding:10px 16px;width:auto;" onclick="showScreen('screen-menu')">←</button>
+    <h2 style="color:var(--neon5);text-shadow:0 0 10px rgba(0,255,136,0.4);">Mes récompenses 🍕</h2>
+  </div>
+  <p style="font-size:0.85rem;color:var(--muted);font-weight:700;margin-bottom:16px;">Chaque pizza complète = une récompense gagnée !</p>
+  <div class="scroll-area" id="my-rewards-list"><div class="loading">Chargement...</div></div>
+</div>
+
+<!-- ═══════ JAVASCRIPT ═══════ -->
 <script>
+/* ─── SUPABASE ─── */
 const SUPABASE_URL  = 'https://abdzshyefwrmhyhyhtbe.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiZHpzaHllZndybWh5aHlodGJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3NjYzNDQsImV4cCI6MjA5MjM0MjM0NH0.q3EI2vqaGliO-erT6W-p1dJRthVclydretAxsoDUM_k';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-let currentUser  = null;
-let currentGame  = null;
-let questions    = [];
-let currentQ     = 0;
-let sessionLogs  = [];
-let timerInterval   = null;
-let timerSecondsLeft = 0;
-let timerEnabled = false;
-let timerValue   = 10;
+/* ─── STATE ─── */
+let currentUser = null, currentGame = null;
+let questions = [], currentQ = 0, sessionLogs = [];
+let timerInterval = null, timerSecondsLeft = 0, timerEnabled = false, timerValue = 10;
 let config = {};
+let rewardsConfig = {}; // { '5x': 2, '3+': 1, ... }
+let pizzaState    = {}; // { '5x': { parts: 3, pointsPerPizza: 2 }, ... }
 
-// ── BOOT ──────────────────────────────────────────────────
+/* ─── BOOT ─── */
 window.addEventListener('DOMContentLoaded', async () => {
   const { data: { session } } = await sb.auth.getSession();
   if (session) await loadUserAndGoMenu(session.user);
-
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN'  && session) await loadUserAndGoMenu(session.user);
-    if (event === 'SIGNED_OUT')            { currentUser = null; showScreen('screen-login'); }
+    if (event === 'SIGNED_IN' && session) await loadUserAndGoMenu(session.user);
+    if (event === 'SIGNED_OUT') { currentUser = null; showScreen('screen-login'); }
   });
 });
 
 async function loadUserAndGoMenu(authUser) {
-  const { data, error } = await sb
-    .from('users')
+  const { data, error } = await sb.from('users')
     .upsert({ email: authUser.email, name: authUser.user_metadata?.full_name || authUser.email.split('@')[0] }, { onConflict: 'email' })
     .select().single();
   if (error) { showError('login-error', 'Erreur : ' + error.message); return; }
   currentUser = data;
-  document.getElementById('menu-username').textContent = '👋 Bonjour ' + currentUser.name.split(' ')[0] + ' !';
+  document.getElementById('menu-username').textContent = '👋 Salut ' + currentUser.name.split(' ')[0] + ' !';
+  await loadRewardsConfig();
+  await loadPizzaState();
   showScreen('screen-menu');
 }
 
-// ── MAGIC LINK AUTH ───────────────────────────────────────
+/* ─── AUTH ─── */
 async function sendMagicLink() {
   const email = document.getElementById('email-input').value.trim();
-  if (!email || !email.includes('@')) {
-    showError('login-error', 'Entre une adresse email valide.');
-    return;
-  }
+  if (!email || !email.includes('@')) { showError('login-error', 'Entre un email valide.'); return; }
   const btn = document.getElementById('magic-btn');
-  btn.textContent = '⏳ Envoi en cours...';
-  btn.disabled = true;
-
-  const { error } = await sb.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: window.location.href }
-  });
-
-  if (error) {
-    showError('login-error', 'Erreur : ' + error.message);
-    btn.textContent = '✉️ Recevoir le lien de connexion';
-    btn.disabled = false;
-    return;
-  }
-
+  btn.textContent = '⏳ Envoi...'; btn.disabled = true;
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
+  if (error) { showError('login-error', error.message); btn.textContent = '✉️ Recevoir le lien'; btn.disabled = false; return; }
   document.getElementById('login-form').style.display = 'none';
   document.getElementById('login-success').style.display = 'block';
   document.getElementById('login-success').innerHTML = `
-    <div class="success-msg">
-      ✅ Lien envoyé à <strong>${email}</strong> !<br><br>
-      Vérifie ta boîte mail et clique sur le lien pour te connecter.<br>
-      <span style="font-size:0.85rem; color:#166534; opacity:0.7;">Tu peux fermer cet onglet après avoir cliqué sur le lien.</span>
-    </div>
-    <button class="btn btn-ghost" style="margin-top:16px; width:100%;" onclick="resetLoginForm()">← Utiliser un autre email</button>
-  `;
+    <div class="success-msg">✅ Lien envoyé à <strong>${email}</strong> !<br>Vérifie ta boîte mail et clique sur le lien.</div>
+    <button class="btn btn-ghost" style="margin-top:12px;width:100%;" onclick="resetLoginForm()">← Autre email</button>`;
 }
 
 function resetLoginForm() {
@@ -349,28 +937,24 @@ function resetLoginForm() {
   document.getElementById('login-success').style.display = 'none';
   document.getElementById('login-success').innerHTML = '';
   document.getElementById('email-input').value = '';
-  const btn = document.getElementById('magic-btn');
-  btn.textContent = '✉️ Recevoir le lien de connexion';
-  btn.disabled = false;
+  const btn = document.getElementById('magic-btn'); btn.textContent = '✉️ Recevoir le lien'; btn.disabled = false;
   document.getElementById('login-error').innerHTML = '';
 }
 
 async function logout() { await sb.auth.signOut(); }
 
-// ── NAVIGATION ────────────────────────────────────────────
+/* ─── NAVIGATION ─── */
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  updateStepIndicators(id);
+  updateStepDots(id);
 }
 
-function updateStepIndicators(screenId) {
-  const map = { 'screen-config-1':1, 'screen-config-2':2, 'screen-config-3':3, 'screen-config-4':4 };
-  const cur = map[screenId];
-  if (!cur) return;
+function updateStepDots(screenId) {
+  const map = { 'screen-config-1':1,'screen-config-2':2,'screen-config-3':3,'screen-config-4':4 };
+  const cur = map[screenId]; if (!cur) return;
   for (let i = 1; i <= 4; i++) {
-    const el = document.getElementById('steps-' + i);
-    if (!el) continue;
+    const el = document.getElementById('steps-' + i); if (!el) continue;
     el.innerHTML = '';
     for (let s = 1; s <= 4; s++) {
       const d = document.createElement('div');
@@ -380,48 +964,55 @@ function updateStepIndicators(screenId) {
   }
 }
 
-// ── CONFIG ────────────────────────────────────────────────
+/* ─── CONFIG — Type de calcul (auto-next) ─── */
 function selectCalcType(type) {
   config.calculusType = type;
   ['adding','multiplying','both'].forEach(t =>
-    document.getElementById('btn-' + t).className = 'choice-btn' + (t === type ? ' selected' : ''));
-  enableBtn('next-1');
+    document.getElementById('btn-' + t).className = 'choice-btn' + (t === type ? ' sel-pink' : ''));
+  setTimeout(() => { buildTablePicker(); showScreen('screen-config-2'); }, 180);
 }
 
-function goToConfig2() { buildTablePicker(); showScreen('screen-config-2'); }
-
+/* ─── CONFIG — Tables ─── */
 function buildTablePicker() {
   ['add-table-grid','mult-table-grid'].forEach(id => document.getElementById(id).innerHTML = '');
   for (let i = 1; i <= 10; i++) {
     const ab = document.createElement('button');
-    ab.className = 'table-btn'; ab.textContent = i + '+'; ab.dataset.table = i + '+';
+    ab.className = 'table-btn'; ab.textContent = i + '+';
     ab.onclick = () => toggleTable(ab, i + '+');
     document.getElementById('add-table-grid').appendChild(ab);
     const mb = document.createElement('button');
-    mb.className = 'table-btn'; mb.textContent = i + '×'; mb.dataset.table = i + 'x';
+    mb.className = 'table-btn'; mb.textContent = i + '×';
     mb.onclick = () => toggleTable(mb, i + 'x');
     document.getElementById('mult-table-grid').appendChild(mb);
   }
+  // Default: some tables selected, show picker
+  config.tableMode = 'some';
+  config.selectedTables = [];
+  showTablePicker();
+  disableBtn('next-2');
+}
+
+function showTablePicker() {
+  const t = config.calculusType;
+  document.getElementById('add-label').style.display  = t !== 'multiplying' ? 'block' : 'none';
+  document.getElementById('add-table-grid').style.display  = t !== 'multiplying' ? 'grid' : 'none';
+  document.getElementById('mult-label').style.display = t !== 'adding'      ? 'block' : 'none';
+  document.getElementById('mult-table-grid').style.display = t !== 'adding'      ? 'grid' : 'none';
 }
 
 function selectTableMode(mode) {
   config.tableMode = mode;
-  document.getElementById('btn-all-tables').className  = 'choice-btn' + (mode === 'all'  ? ' selected' : '');
-  document.getElementById('btn-some-tables').className = 'choice-btn' + (mode === 'some' ? ' selected' : '');
-  if (mode === 'some') {
-    document.getElementById('table-picker').style.display = 'block';
-    const t = config.calculusType;
-    document.getElementById('table-picker-label').textContent  = t === 'multiplying' ? 'Tables de multiplication :' : "Tables d'addition :";
-    document.getElementById('table-picker-label').style.display = 'block';
-    document.getElementById('add-table-grid').style.display   = t === 'multiplying' ? 'none' : 'grid';
-    document.getElementById('mult-label').style.display       = t === 'both'        ? 'block' : 'none';
-    document.getElementById('mult-table-grid').style.display  = t === 'adding'      ? 'none' : 'grid';
-    config.selectedTables = [];
-    disableBtn('next-2');
-  } else {
-    document.getElementById('table-picker').style.display = 'none';
+  document.getElementById('btn-all-tables').className  = 'choice-btn' + (mode === 'all'  ? ' sel-cyan' : '');
+  document.getElementById('btn-some-tables').className = 'choice-btn' + (mode === 'some' ? ' sel-pink' : '');
+  if (mode === 'all') {
     config.selectedTables = null;
-    enableBtn('next-2');
+    // Auto-next
+    setTimeout(() => showScreen('screen-config-3'), 180);
+  } else {
+    config.selectedTables = [];
+    // Unselect all table buttons
+    document.querySelectorAll('.table-btn').forEach(b => b.className = 'table-btn');
+    disableBtn('next-2');
   }
 }
 
@@ -429,35 +1020,36 @@ function toggleTable(btn, tableKey) {
   if (!config.selectedTables) config.selectedTables = [];
   const idx = config.selectedTables.indexOf(tableKey);
   if (idx >= 0) { config.selectedTables.splice(idx, 1); btn.className = 'table-btn'; }
-  else          { config.selectedTables.push(tableKey);  btn.className = 'table-btn selected'; }
+  else          { config.selectedTables.push(tableKey);  btn.className = 'table-btn sel'; }
   config.selectedTables.length ? enableBtn('next-2') : disableBtn('next-2');
 }
 
+/* ─── CONFIG — Ordre (auto-next) ─── */
 function selectOrder(order) {
   config.orderMode = order;
-  document.getElementById('btn-sorted').className  = 'choice-btn' + (order === 'sorted'  ? ' selected' : '');
-  document.getElementById('btn-shuffle').className = 'choice-btn' + (order === 'shuffle' ? ' selected' : '');
-  enableBtn('next-3');
+  document.getElementById('btn-sorted').className  = 'choice-btn' + (order === 'sorted'  ? ' sel-green' : '');
+  document.getElementById('btn-shuffle').className = 'choice-btn' + (order === 'shuffle' ? ' sel-green' : '');
+  setTimeout(() => showScreen('screen-config-4'), 180);
 }
 
+/* ─── CONFIG — Timer ─── */
 function toggleTimer() {
   timerEnabled = !timerEnabled;
   document.getElementById('timer-toggle').className = 'toggle' + (timerEnabled ? ' on' : '');
   document.getElementById('timer-value-area').style.display = timerEnabled ? 'block' : 'none';
 }
-
 function changeTimer(delta) {
   const inp = document.getElementById('timer-seconds');
   inp.value = Math.max(3, Math.min(120, parseInt(inp.value) + delta));
 }
 
-function enableBtn(id)  { const b = document.getElementById(id); b.disabled = false; b.style.opacity = '1';   b.style.cursor = 'pointer'; }
-function disableBtn(id) { const b = document.getElementById(id); b.disabled = true;  b.style.opacity = '0.4'; b.style.cursor = 'not-allowed'; }
+function enableBtn(id)  { const b = document.getElementById(id); b.disabled=false; b.style.opacity='1'; b.style.cursor='pointer'; }
+function disableBtn(id) { const b = document.getElementById(id); b.disabled=true;  b.style.opacity='0.3'; b.style.cursor='not-allowed'; }
 
-// ── GAME START ────────────────────────────────────────────
+/* ─── GAME START ─── */
 async function startGame() {
   timerValue = parseInt(document.getElementById('timer-seconds').value) || 10;
-  const tableSelection = config.tableMode === 'all' ? buildAllTableSelection() : config.selectedTables.join(' ');
+  const tableSelection = config.tableMode === 'all' ? buildAllTableStr() : config.selectedTables.join(' ');
 
   const { data, error } = await sb.from('games').insert({
     user_id: currentUser.user_id, calculus_type: config.calculusType,
@@ -471,64 +1063,66 @@ async function startGame() {
   showScreen('screen-game'); renderQuestion();
 }
 
-function buildAllTableSelection() {
-  const parts = [];
+function buildAllTableStr() {
+  const p = [];
   for (let i = 1; i <= 10; i++) {
-    if (config.calculusType !== 'multiplying') parts.push(i + '+');
-    if (config.calculusType !== 'adding')      parts.push(i + 'x');
+    if (config.calculusType !== 'multiplying') p.push(i + '+');
+    if (config.calculusType !== 'adding')      p.push(i + 'x');
   }
-  return parts.join(' ');
+  return p.join(' ');
 }
 
 function generateQuestions() {
-  const tables = config.tableMode === 'all' ? buildAllTableSelection().split(' ') : config.selectedTables;
+  const tables = config.tableMode === 'all' ? buildAllTableStr().split(' ') : config.selectedTables;
   const qs = [];
-  tables.forEach(tableKey => {
-    const num = parseInt(tableKey);
-    if (tableKey.endsWith('+')) for (let i = 1; i <= 10; i++) qs.push({ table: num+'+', operation: `${i} + ${num}`, answer: i+num });
-    if (tableKey.endsWith('x')) for (let i = 1; i <= 10; i++) qs.push({ table: num+'x', operation: `${i} × ${num}`, answer: i*num });
+  tables.forEach(tk => {
+    const num = parseInt(tk);
+    // Table number FIRST: 4×7 not 7×4
+    if (tk.endsWith('+')) for (let i=1;i<=10;i++) qs.push({ table:num+'+', operation:`${num} + ${i}`, answer:num+i });
+    if (tk.endsWith('x')) for (let i=1;i<=10;i++) qs.push({ table:num+'x', operation:`${num} × ${i}`, answer:num*i });
   });
   if (config.orderMode === 'shuffle') {
-    for (let i = qs.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [qs[i], qs[j]] = [qs[j], qs[i]];
-    }
+    for (let i=qs.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [qs[i],qs[j]]=[qs[j],qs[i]]; }
   }
   return qs;
 }
 
-// ── GAME LOOP ─────────────────────────────────────────────
+/* ─── GAME LOOP ─── */
 function renderQuestion() {
   const q = questions[currentQ];
-  document.getElementById('game-progress').style.width = (currentQ / questions.length * 100) + '%';
-  document.getElementById('q-counter').textContent = `Question ${currentQ + 1} sur ${questions.length}`;
-  document.getElementById('operation-display').textContent = q.operation + ' = ?';
+  document.getElementById('game-progress').style.width = (currentQ/questions.length*100)+'%';
+  document.getElementById('q-counter').textContent = `${currentQ+1}/${questions.length}`;
+  document.getElementById('operation-display').textContent = q.operation + ' =';
+  document.getElementById('table-badge').textContent = 'Table des ' + q.table;
   document.getElementById('answer-input').value = '';
   document.getElementById('answer-input').focus();
   document.getElementById('feedback-area').style.color = 'transparent';
   document.getElementById('feedback-area').textContent = '-';
   document.getElementById('streak-bar').innerHTML = sessionLogs.slice(-10).map(l =>
-    `<div class="streak-dot ${l.success ? 'ok' : 'ko'}"></div>`).join('');
-  if (timerEnabled) { document.getElementById('timer-ring').style.display = 'flex'; startTimerCountdown(); }
+    `<div class="streak-dot ${l.success?'ok':'ko'}"></div>`).join('');
+  if (timerEnabled) { document.getElementById('timer-ring').style.display='flex'; startCountdown(); }
 }
 
-function startTimerCountdown() {
+function startCountdown() {
   clearInterval(timerInterval);
   timerSecondsLeft = timerValue;
-  updateTimerRing(timerSecondsLeft, timerValue);
+  updateRing(timerSecondsLeft, timerValue);
   timerInterval = setInterval(() => {
     timerSecondsLeft--;
-    updateTimerRing(timerSecondsLeft, timerValue);
+    updateRing(timerSecondsLeft, timerValue);
     if (timerSecondsLeft <= 0) { clearInterval(timerInterval); timeOut(); }
   }, 1000);
 }
 
-function updateTimerRing(left, total) {
-  const ratio = left / total;
-  document.getElementById('timer-circle').style.strokeDashoffset = 213.6 * (1 - ratio);
-  document.getElementById('timer-circle').style.stroke = ratio > 0.5 ? 'var(--green)' : ratio > 0.25 ? 'var(--yellow)' : 'var(--red)';
-  document.getElementById('timer-display').textContent = Math.max(0, left);
-  document.getElementById('timer-display').style.color = ratio > 0.5 ? 'var(--green)' : ratio > 0.25 ? 'var(--orange)' : 'var(--red)';
+function updateRing(left, total) {
+  const ratio = left/total;
+  const circ = 188.5;
+  document.getElementById('timer-circle').style.strokeDashoffset = circ*(1-ratio);
+  const color = ratio>0.5 ? 'var(--neon5)' : ratio>0.25 ? 'var(--neon3)' : 'var(--neon6)';
+  document.getElementById('timer-circle').style.stroke = color;
+  const txt = document.getElementById('timer-display');
+  txt.textContent = Math.max(0, left);
+  txt.className = 'timer-text ' + (ratio>0.5?'timer-ok':ratio>0.25?'timer-warn':'timer-danger');
 }
 
 function timeOut() {
@@ -538,7 +1132,7 @@ function timeOut() {
   setTimeout(() => nextQuestion(), 1500);
 }
 
-function handleKey(e) { if (e.key === 'Enter') submitAnswer(); }
+function handleKey(e) { if (e.key==='Enter') submitAnswer(); }
 
 function submitAnswer() {
   clearInterval(timerInterval);
@@ -552,133 +1146,357 @@ function submitAnswer() {
 }
 
 function recordLog(q, enteredAnswer, success) {
-  const log = { game_id: currentGame.game_id, table_key: q.table, operation: q.operation, entered_answer: enteredAnswer, success };
-  sessionLogs.push({ ...log, answer: q.answer });
-  sb.from('game_logs').insert(log).then(({ error }) => { if (error) console.error('Log error:', error.message); });
+  const log = { game_id:currentGame.game_id, table_key:q.table, operation:q.operation, entered_answer:enteredAnswer, success };
+  sessionLogs.push({ ...log, answer:q.answer });
+  sb.from('game_logs').insert(log).then(({error})=>{ if(error) console.error(error.message); });
 }
 
 function showFeedback(success, correctAnswer) {
   const fb = document.getElementById('feedback-area');
   const op = document.getElementById('operation-display');
   if (success) {
-    fb.textContent = '✓ Bravo !'; fb.style.color = 'var(--green)';
-    op.classList.add('bounce'); setTimeout(() => op.classList.remove('bounce'), 500);
+    fb.textContent='✓ Bravo !'; fb.style.color='var(--neon5)';
+    op.parentElement.classList.add('bounce'); setTimeout(()=>op.parentElement.classList.remove('bounce'),500);
   } else {
-    fb.textContent = `✗ La réponse était ${correctAnswer}`; fb.style.color = 'var(--red)';
-    const inp = document.getElementById('answer-input');
-    inp.classList.add('shake'); setTimeout(() => inp.classList.remove('shake'), 400);
+    fb.textContent=`✗ C'était ${correctAnswer}`; fb.style.color='var(--neon6)';
+    const inp=document.getElementById('answer-input');
+    inp.classList.add('shake'); setTimeout(()=>inp.classList.remove('shake'),400);
   }
 }
 
 function nextQuestion() {
   currentQ++;
-  if (currentQ >= questions.length) showResults();
-  else renderQuestion();
+  // Check if we just finished a table
+  const prevQ = questions[currentQ - 1];
+  const tableJustFinished = prevQ && isTableComplete(prevQ.table);
+  if (tableJustFinished) {
+    checkAndShowPizza(prevQ.table, () => {
+      if (currentQ >= questions.length) showResults();
+      else renderQuestion();
+    });
+  } else {
+    if (currentQ >= questions.length) showResults();
+    else renderQuestion();
+  }
 }
 
-// ── RESULTS ───────────────────────────────────────────────
+function isTableComplete(tableKey) {
+  // Check if all 10 questions for this table have been answered
+  const tableLogs = sessionLogs.filter(l => l.table_key === tableKey);
+  return tableLogs.length === 10 && tableLogs.length === sessionLogs.filter(l=>l.table_key===tableKey).length
+    && questions.filter((q,i)=>q.table===tableKey && i < currentQ).length === 10;
+}
+
+/* ─── PIZZA SYSTEM ─── */
+async function loadPizzaState() {
+  if (!currentUser) return;
+  const { data } = await sb.from('pizza_progress').select('*').eq('user_id', currentUser.user_id);
+  pizzaState = {};
+  (data||[]).forEach(row => { pizzaState[row.table_key] = { parts: row.parts_earned, pointsPerPizza: row.points_per_pizza }; });
+}
+
+async function checkAndShowPizza(tableKey, callback) {
+  const tableLogs = sessionLogs.filter(l => l.table_key === tableKey);
+  const correct   = tableLogs.filter(l => l.success).length;
+  const points    = rewardsConfig[tableKey] || 1; // parts this table gives
+  const totalParts = 6; // pizza has 6 slices
+
+  // Update pizza state
+  if (!pizzaState[tableKey]) pizzaState[tableKey] = { parts: 0, pointsPerPizza: points };
+  const newParts = Math.min(pizzaState[tableKey].parts + points, totalParts * 99);
+  pizzaState[tableKey].parts = newParts;
+
+  // Save to DB
+  await sb.from('pizza_progress').upsert({
+    user_id: currentUser.user_id,
+    table_key: tableKey,
+    parts_earned: newParts,
+    points_per_pizza: points
+  }, { onConflict: 'user_id,table_key' });
+
+  // Show overlay
+  showPizzaOverlay(tableKey, correct, points, newParts, callback);
+}
+
+function showPizzaOverlay(tableKey, correct, partsEarned, totalParts, callback) {
+  const isAdd  = tableKey.endsWith('+');
+  const num    = parseInt(tableKey);
+  const label  = isAdd ? `Table d'addition des ${num}` : `Table de multiplication des ${num}`;
+  const partsInCurrentPizza = totalParts % 6 || (totalParts > 0 && totalParts % 6 === 0 ? 6 : 0);
+  const completedPizzas = Math.floor(totalParts / 6);
+
+  document.getElementById('pizza-overlay-title').textContent = `🍕 ${label} terminée !`;
+  document.getElementById('pizza-overlay-sub').textContent   = `${correct}/10 bonnes réponses · +${partsEarned > 0 ? partsEarned % 6 || 6 : 0} parts gagnées`;
+  document.getElementById('pizza-parts-label').textContent   = completedPizzas > 0 ? `🎉 ${completedPizzas} pizza${completedPizzas>1?'s':''} complète${completedPizzas>1?'s':''}  !` : `${partsInCurrentPizza}/6 parts`;
+
+  drawPizzaSVG('pizza-svg', partsInCurrentPizza, partsEarned);
+
+  document.getElementById('pizza-overlay').classList.remove('hidden');
+  document.getElementById('pizza-overlay').dataset.callback = '';
+  window._pizzaCallback = callback;
+}
+
+function closePizzaOverlay() {
+  document.getElementById('pizza-overlay').classList.add('hidden');
+  if (window._pizzaCallback) { const cb = window._pizzaCallback; window._pizzaCallback = null; cb(); }
+}
+
+function drawPizzaSVG(svgId, earnedParts, totalParts) {
+  const svg = document.getElementById(svgId);
+  svg.innerHTML = '';
+  const cx=100, cy=100, r=88, slices=6;
+  const colors = ['#ff6600','#ffcc00','#ff0066','#ff9900','#ff3300','#ffaa00'];
+
+  for (let i=0;i<slices;i++) {
+    const startAngle = (i/slices)*Math.PI*2 - Math.PI/2;
+    const endAngle   = ((i+1)/slices)*Math.PI*2 - Math.PI/2;
+    const x1=cx+r*Math.cos(startAngle), y1=cy+r*Math.sin(startAngle);
+    const x2=cx+r*Math.cos(endAngle),   y2=cy+r*Math.sin(endAngle);
+    const isEarned = i < (earnedParts % 6 || (earnedParts>0 && earnedParts%6===0?6:0));
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M ${cx},${cy} L ${x1},${y1} A ${r},${r} 0 0,1 ${x2},${y2} Z`);
+    path.setAttribute('fill', isEarned ? colors[i] : 'rgba(255,255,255,0.05)');
+    path.setAttribute('stroke','#0a0a1a');
+    path.setAttribute('stroke-width','3');
+    if (isEarned) {
+      path.style.filter = `drop-shadow(0 0 6px ${colors[i]})`;
+      path.style.animation = `glow-pulse 2s ease-in-out infinite`;
+    }
+    svg.appendChild(path);
+
+    // Divider lines
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',cx); line.setAttribute('y1',cy);
+    line.setAttribute('x2',cx+r*Math.cos(startAngle)); line.setAttribute('y2',cy+r*Math.sin(startAngle));
+    line.setAttribute('stroke','#0a0a1a'); line.setAttribute('stroke-width','2');
+    svg.appendChild(line);
+  }
+  // Circle outline
+  const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  circle.setAttribute('cx',cx); circle.setAttribute('cy',cy); circle.setAttribute('r',r);
+  circle.setAttribute('fill','none'); circle.setAttribute('stroke','rgba(255,255,255,0.1)'); circle.setAttribute('stroke-width','2');
+  svg.appendChild(circle);
+}
+
+/* ─── RESULTS ─── */
 function showResults() {
   clearInterval(timerInterval);
-  const correct = sessionLogs.filter(l => l.success).length;
+  const correct = sessionLogs.filter(l=>l.success).length;
   const total   = sessionLogs.length;
-  const pct     = Math.round(correct / total * 100);
-  document.getElementById('result-score').textContent = `${correct} / ${total}`;
-  document.getElementById('result-label').textContent  = pct >= 90 ? 'Excellent ! 🎉' : pct >= 70 ? 'Très bien !' : pct >= 50 ? 'Continue comme ça !' : 'On va progresser !';
-  document.getElementById('result-stars').textContent  = pct >= 90 ? '⭐⭐⭐' : pct >= 70 ? '⭐⭐' : '⭐';
-  const list = document.getElementById('results-list');
-  list.innerHTML = '';
-  sessionLogs.forEach(log => {
-    const row = document.createElement('div'); row.className = 'result-row';
-    const dot = document.createElement('div'); dot.className = 'dot ' + (log.success ? 'dot-green' : 'dot-red'); dot.textContent = log.success ? '✓' : '✗';
-    const text = document.createElement('div'); text.style.flex = '1';
-    text.innerHTML = `<span style="font-size:1.1rem;">${log.operation} = <strong>${log.entered_answer !== null && log.entered_answer !== undefined ? log.entered_answer : '—'}</strong></span>`;
+  const pct     = Math.round(correct/total*100);
+  document.getElementById('result-score').textContent = `${correct}/${total}`;
+  document.getElementById('result-label').textContent  = pct>=90?'Excellent ! 🎉':pct>=70?'Très bien !':pct>=50?'Continue !':'On progresse !';
+  document.getElementById('result-stars').textContent  = pct>=90?'⭐⭐⭐':pct>=70?'⭐⭐':'⭐';
+  const list=document.getElementById('results-list'); list.innerHTML='';
+  sessionLogs.forEach(log=>{
+    const row=document.createElement('div'); row.className='result-row';
+    const dot=document.createElement('div'); dot.className='rdot '+(log.success?'rdot-ok':'rdot-ko'); dot.textContent=log.success?'✓':'✗';
+    const text=document.createElement('div'); text.style.flex='1';
+    text.innerHTML=`<span>${log.operation} = <strong>${log.entered_answer!==null&&log.entered_answer!==undefined?log.entered_answer:'—'}</strong></span>`;
     if (!log.success) {
-      const c = document.createElement('span');
-      c.style.cssText = 'font-size:0.85rem;color:var(--green);font-weight:700;display:block;';
-      c.textContent = '→ ' + log.answer;
-      text.appendChild(c);
+      const c=document.createElement('span'); c.style.cssText='font-size:0.82rem;color:var(--neon5);font-weight:800;display:block;';
+      c.textContent='→ '+log.answer; text.appendChild(c);
     }
-    row.appendChild(dot); row.appendChild(text); list.appendChild(row);
+    const tg=document.createElement('span'); tg.className='tag tag-pink'; tg.textContent=log.table_key;
+    row.appendChild(dot); row.appendChild(text); row.appendChild(tg); list.appendChild(row);
   });
   showScreen('screen-results');
 }
 
 function restartGame() { showScreen('screen-config-1'); }
 function confirmQuit() {
-  if (confirm('Abandonner la partie en cours ?')) { clearInterval(timerInterval); showScreen('screen-menu'); }
+  if (confirm('Abandonner ?')) { clearInterval(timerInterval); showScreen('screen-menu'); }
 }
 
-// ── HISTORY ───────────────────────────────────────────────
+/* ─── HISTORY ─── */
 async function showHistoryScreen() {
   showScreen('screen-history');
-  document.getElementById('history-list').innerHTML = '<div class="loading">Chargement...</div>';
-
-  const [{ data: games, error }, { data: scores }] = await Promise.all([
-    sb.from('games').select('*').eq('user_id', currentUser.user_id).order('created_at', { ascending: false }),
-    sb.from('view_game_scores').select('game_id,correct_answers,total_questions').eq('user_id', currentUser.user_id)
+  document.getElementById('history-list').innerHTML='<div class="loading">Chargement...</div>';
+  const [{ data:games, error }, { data:scores }] = await Promise.all([
+    sb.from('games').select('*').eq('user_id',currentUser.user_id).order('created_at',{ascending:false}),
+    sb.from('view_game_scores').select('game_id,correct_answers,total_questions').eq('user_id',currentUser.user_id)
   ]);
-
-  if (error) { document.getElementById('history-list').innerHTML = `<div class="error-msg">Erreur : ${error.message}</div>`; return; }
-  const scoreMap = {};
-  (scores || []).forEach(s => scoreMap[s.game_id] = s);
-
-  const list = document.getElementById('history-list');
-  if (!games || games.length === 0) {
-    list.innerHTML = '<div style="text-align:center;color:#ccc;font-weight:700;padding:40px;">Aucune partie encore jouée !</div>';
-    return;
-  }
-  list.innerHTML = '';
-  games.forEach(game => {
-    const sc   = scoreMap[game.game_id] || {};
-    const date = new Date(game.created_at).toLocaleDateString('fr-FR', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
-    const item = document.createElement('div'); item.className = 'history-item';
-    item.innerHTML = `
+  if (error) { document.getElementById('history-list').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
+  const sm={}; (scores||[]).forEach(s=>sm[s.game_id]=s);
+  const list=document.getElementById('history-list');
+  if (!games||games.length===0) { list.innerHTML='<div style="text-align:center;color:var(--muted);font-weight:700;padding:40px;">Aucune partie !</div>'; return; }
+  list.innerHTML='';
+  games.forEach(game=>{
+    const sc=sm[game.game_id]||{};
+    const date=new Date(game.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+    const item=document.createElement('div'); item.className='history-item';
+    item.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
-        <div>
-          <div style="font-weight:800;font-size:1rem;">Partie #${game.game_id}</div>
-          <div style="font-size:0.85rem;color:#aaa;font-weight:600;">${date}</div>
-        </div>
-        <div style="font-family:'Baloo 2';font-size:1.3rem;font-weight:800;color:var(--orange);">${sc.correct_answers ?? '—'}/${sc.total_questions ?? '—'}</div>
+        <div><div style="font-weight:900;font-size:0.95rem;">Partie #${game.game_id}</div><div style="font-size:0.8rem;color:var(--muted);font-weight:700;">${date}</div></div>
+        <div style="font-family:'Baloo 2';font-size:1.3rem;font-weight:900;color:var(--neon1);text-shadow:0 0 8px var(--neon1);">${sc.correct_answers??'—'}/${sc.total_questions??'—'}</div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <span class="tag tag-orange">${game.calculus_type === 'adding' ? 'Addition' : game.calculus_type === 'multiplying' ? 'Multiplication' : 'Les deux'}</span>
-        <span class="tag tag-green">${game.order_mode === 'sorted' ? "Dans l'ordre" : 'Au hasard'}</span>
-        ${game.timer ? `<span class="tag tag-purple">⏱ ${game.timer_value}s</span>` : ''}
+        <span class="tag tag-pink">${game.calculus_type==='adding'?'Addition':game.calculus_type==='multiplying'?'Multiplication':'Les deux'}</span>
+        <span class="tag tag-cyan">${game.order_mode==='sorted'?"Dans l'ordre":'Au hasard'}</span>
+        ${game.timer?`<span class="tag tag-yellow">⏱ ${game.timer_value}s</span>`:''}
       </div>`;
-    item.onclick = () => showGameDetail(game, sc);
-    list.appendChild(item);
+    item.onclick=()=>showGameDetail(game,sc); list.appendChild(item);
   });
 }
 
 async function showGameDetail(game, sc) {
-  const date = new Date(game.created_at).toLocaleDateString('fr-FR', { day:'numeric', month:'long' });
-  document.getElementById('detail-title').textContent = `Partie #${game.game_id} — ${date}`;
-  document.getElementById('detail-score').textContent = `${sc?.correct_answers ?? '—'} / ${sc?.total_questions ?? '—'} bonnes réponses`;
+  const date=new Date(game.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+  document.getElementById('detail-title').textContent=`Partie #${game.game_id} — ${date}`;
+  document.getElementById('detail-score').textContent=`${sc?.correct_answers??'—'} / ${sc?.total_questions??'—'} bonnes réponses`;
   showScreen('screen-game-detail');
-  document.getElementById('detail-list').innerHTML = '<div class="loading">Chargement...</div>';
-
-  const { data: logs, error } = await sb.from('game_logs').select('*').eq('game_id', game.game_id).order('created_at', { ascending: true });
-  if (error) { document.getElementById('detail-list').innerHTML = `<div class="error-msg">Erreur : ${error.message}</div>`; return; }
-
-  const list = document.getElementById('detail-list');
-  list.innerHTML = '';
-  logs.forEach(log => {
-    const row = document.createElement('div'); row.className = 'result-row';
-    const dot = document.createElement('div'); dot.className = 'dot ' + (log.success ? 'dot-green' : 'dot-red'); dot.textContent = log.success ? '✓' : '✗';
-    const text = document.createElement('div'); text.style.flex = '1';
-    text.innerHTML = `<span style="font-size:1.05rem;">${log.operation} = <strong>${log.entered_answer !== null ? log.entered_answer : '—'}</strong></span>`;
-    const tableTag = document.createElement('span');
-    tableTag.style.cssText = 'font-size:0.75rem;color:#bbb;font-weight:600;margin-left:auto;flex-shrink:0;';
-    tableTag.textContent = log.table_key;
-    row.appendChild(dot); row.appendChild(text); row.appendChild(tableTag);
-    list.appendChild(row);
+  document.getElementById('detail-list').innerHTML='<div class="loading">Chargement...</div>';
+  const { data:logs, error }=await sb.from('game_logs').select('*').eq('game_id',game.game_id).order('created_at',{ascending:true});
+  if (error) { document.getElementById('detail-list').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
+  const list=document.getElementById('detail-list'); list.innerHTML='';
+  logs.forEach(log=>{
+    const row=document.createElement('div'); row.className='result-row';
+    const dot=document.createElement('div'); dot.className='rdot '+(log.success?'rdot-ok':'rdot-ko'); dot.textContent=log.success?'✓':'✗';
+    const text=document.createElement('div'); text.style.flex='1';
+    text.innerHTML=`<span>${log.operation} = <strong>${log.entered_answer!==null?log.entered_answer:'—'}</strong></span>`;
+    const tg=document.createElement('span'); tg.className='tag tag-pink'; tg.style.marginLeft='auto'; tg.textContent=log.table_key;
+    row.appendChild(dot); row.appendChild(text); row.appendChild(tg); list.appendChild(row);
   });
 }
 
-function showError(containerId, msg) {
-  const el = document.getElementById(containerId);
-  if (el) el.innerHTML = `<div class="error-msg">${msg}</div>`;
+/* ─── RÉVISION ─── */
+function showReviewMenu() { showScreen('screen-review-menu'); }
+
+function showReview(type) {
+  const isAdd = type === 'adding';
+  document.getElementById('review-title').textContent = isAdd ? "Tables d'addition" : "Tables de multiplication";
+  const content = document.getElementById('review-content'); content.innerHTML='';
+
+  for (let n=1; n<=10; n++) {
+    const block=document.createElement('div'); block.className='review-table';
+    const header=document.createElement('div'); header.className='review-header';
+    header.textContent = isAdd ? `Table de ${n} (+)` : `Table de ${n} (×)`;
+    block.appendChild(header);
+    for (let i=1; i<=10; i++) {
+      const row=document.createElement('div'); row.className='review-row';
+      const op=document.createElement('span'); op.className='review-op';
+      op.textContent = isAdd ? `${n} + ${i} =` : `${n} × ${i} =`;
+      const ans=document.createElement('span'); ans.className='review-ans';
+      ans.textContent = isAdd ? n+i : n*i;
+      row.appendChild(op); row.appendChild(ans); block.appendChild(row);
+    }
+    content.appendChild(block);
+  }
+  showScreen('screen-review-tables');
 }
+
+/* ─── RÉCOMPENSES CONFIG ─── */
+async function loadRewardsConfig() {
+  if (!currentUser) return;
+  const { data } = await sb.from('rewards_config').select('*').eq('user_id', currentUser.user_id);
+  rewardsConfig = {};
+  (data||[]).forEach(row => { rewardsConfig[row.table_key] = row.points; });
+}
+
+function showRewardsConfigScreen() { buildRewardsForm(); showScreen('screen-rewards-config'); }
+
+function buildRewardsForm() {
+  const list=document.getElementById('rewards-config-list'); list.innerHTML='';
+
+  const sections=[
+    { label:'Tables d\'addition', keys: Array.from({length:10},(_,i)=>`${i+1}+`) },
+    { label:'Tables de multiplication', keys: Array.from({length:10},(_,i)=>`${i+1}x`) }
+  ];
+
+  sections.forEach(sec=>{
+    const block=document.createElement('div'); block.className='reward-table';
+    const header=document.createElement('div'); header.className='reward-header'; header.textContent=sec.label;
+    block.appendChild(header);
+    sec.keys.forEach(key=>{
+      const num=parseInt(key);
+      const sym=key.endsWith('+')? '+' : '×';
+      const row=document.createElement('div'); row.className='reward-row';
+      const lbl=document.createElement('label'); lbl.textContent=`Table ${num} ${sym}`;
+      const inp=document.createElement('input'); inp.type='number'; inp.className='reward-input';
+      inp.min='0'; inp.max='6'; inp.value=rewardsConfig[key]||1; inp.placeholder='1'; inp.dataset.key=key;
+      row.appendChild(lbl); row.appendChild(inp); block.appendChild(row);
+    });
+    list.appendChild(block);
+  });
+}
+
+async function saveRewards() {
+  const inputs=document.querySelectorAll('.reward-input');
+  const upsertData=[];
+  inputs.forEach(inp=>{
+    const key=inp.dataset.key;
+    const val=Math.max(0,Math.min(6,parseInt(inp.value)||1));
+    rewardsConfig[key]=val;
+    upsertData.push({ user_id:currentUser.user_id, table_key:key, points:val });
+  });
+  const { error }=await sb.from('rewards_config').upsert(upsertData,{ onConflict:'user_id,table_key' });
+  if (error) { alert('Erreur : '+error.message); return; }
+  alert('✅ Récompenses sauvegardées !');
+  showScreen('screen-menu');
+}
+
+/* ─── MES RÉCOMPENSES ─── */
+async function showMyRewardsScreen() {
+  showScreen('screen-my-rewards');
+  await loadPizzaState();
+  const list=document.getElementById('my-rewards-list'); list.innerHTML='';
+
+  const allTables=[...Array.from({length:10},(_,i)=>`${i+1}+`),...Array.from({length:10},(_,i)=>`${i+1}x`)];
+
+  if (Object.keys(pizzaState).length===0) {
+    list.innerHTML='<div style="text-align:center;color:var(--muted);font-weight:700;padding:40px;">Joue pour gagner des 🍕 !</div>';
+    return;
+  }
+
+  allTables.forEach(tableKey=>{
+    const state=pizzaState[tableKey];
+    if (!state || state.parts===0) return;
+    const num=parseInt(tableKey); const isAdd=tableKey.endsWith('+');
+    const name=isAdd?`Addition des ${num}`:`Multiplication des ${num}`;
+    const completedPizzas=Math.floor(state.parts/6);
+    const remainParts=state.parts%6;
+
+    const card=document.createElement('div'); card.className='reward-card';
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 200 200'); svg.setAttribute('width','60'); svg.setAttribute('height','60');
+    svg.classList.add('reward-pizza-mini');
+
+    // Mini pizza drawing
+    const colors=['#ff6600','#ffcc00','#ff0066','#ff9900','#ff3300','#ffaa00'];
+    for (let i=0;i<6;i++){
+      const sa=(i/6)*Math.PI*2-Math.PI/2, ea=((i+1)/6)*Math.PI*2-Math.PI/2;
+      const x1=100+88*Math.cos(sa),y1=100+88*Math.sin(sa),x2=100+88*Math.cos(ea),y2=100+88*Math.sin(ea);
+      const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+      p.setAttribute('d',`M 100,100 L ${x1},${y1} A 88,88 0 0,1 ${x2},${y2} Z`);
+      p.setAttribute('fill', i<remainParts ? colors[i] : 'rgba(255,255,255,0.05)');
+      p.setAttribute('stroke','#0a0a1a'); p.setAttribute('stroke-width','4');
+      svg.appendChild(p);
+    }
+
+    const info=document.createElement('div'); info.className='reward-info';
+    info.innerHTML=`
+      <div class="reward-name">${name}</div>
+      <div class="reward-progress">${completedPizzas} pizza${completedPizzas>1?'s':''} complète${completedPizzas>1?'s':''} · ${remainParts}/6 parts en cours</div>
+      <div class="pizza-parts-bar">
+        ${Array.from({length:6},(_,i)=>`<div class="part-dot ${i<remainParts?'earned':''}"></div>`).join('')}
+      </div>`;
+
+    card.appendChild(svg); card.appendChild(info); list.appendChild(card);
+  });
+
+  if (list.children.length===0) {
+    list.innerHTML='<div style="text-align:center;color:var(--muted);font-weight:700;padding:40px;">Joue pour gagner des 🍕 !</div>';
+  }
+}
+
+/* ─── UTILS ─── */
+function showError(id, msg) { const el=document.getElementById(id); if(el) el.innerHTML=`<div class="error-msg">${msg}</div>`; }
+
+// Fix: rewards config button in menu
+document.addEventListener('DOMContentLoaded', ()=>{
+  const rewBtn = document.querySelector('.mb-rew');
+  if (rewBtn) rewBtn.onclick = () => { buildRewardsForm(); showScreen('screen-rewards-config'); };
+});
 </script>
 </body>
 </html>
